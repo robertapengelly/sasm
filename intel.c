@@ -1005,6 +1005,12 @@ static void machine_dependent_set_march (const char *optarg) {
     }
     
     free (orig_arg);
+    
+    if ((cpu_arch_flags & CPU_386)) {
+        bits = 32;
+    } else if ((cpu_arch_flags & CPU_8086)) {
+        bits = 16;
+    }
 
 }
 
@@ -2294,7 +2300,7 @@ static int intel_process_register_expr (struct expr *expr) {
     } else if (!intel_state.index_reg) {
         intel_state.index_reg = reg_table + reg_num;
     } else {
-        intel_state.index_reg = 0;
+        intel_state.index_reg = reg_esp;
     }
     
     return 2;
@@ -2419,7 +2425,7 @@ static int intel_simplify_expr (struct expr *expr) {
                         
                         default:
                         
-                            intel_state.index_reg = 0;
+                            intel_state.index_reg = reg_esp;
                             break;
                     
                     }
