@@ -3018,7 +3018,7 @@ static int check_word_reg (void) {
         }
         
         if ((instruction.types[op] & REG32) && (instruction.template.operand_types[op] & (REG16 | ACC))) {
-            report_at (get_filename (), get_line_number (), REPORT_ERROR, "using '%%%s' instead of '%%%s' due to '%c' suffix", (instruction.regs[op]-8)->name, instruction.regs[op]->name, instruction.suffix);
+            report_at (get_filename (), get_line_number (), REPORT_WARNING, "using '%%%s' instead of '%%%s' due to '%c' suffix", (instruction.regs[op]-8)->name, instruction.regs[op]->name, instruction.suffix);
         }
     
     }
