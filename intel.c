@@ -1706,7 +1706,7 @@ static char *parse_instruction (char *line) {
         
         if (saved_ch && (*skip_whitespace (p2 + 1)) && current_templates && (current_templates->start->opcode_modifier & IS_PREFIX)) {
         
-            if ((current_templates->start->opcode_modifier & (SIZE16 | SIZE32)) && ((current_templates->start->opcode_modifier & SIZE32) && (bits ^= 16))) {
+            if ((current_templates->start->opcode_modifier & (SIZE16 | SIZE32)) && (((current_templates->start->opcode_modifier & SIZE32) != 0) ^ (bits == 16))) {
             
                 report_at (get_filename (), get_line_number (), REPORT_ERROR, "redundant %s prefix", current_templates->name);
                 return 0;
@@ -2164,7 +2164,11 @@ static int intel_parse_operand (char *start, char *operand_string) {
             instruction.disps[instruction.operands] = expr;
             instruction.disp_operands++;
             
-            instruction.types[instruction.operands] |= DISP16;
+            if ((bits == 16) ^ (!instruction.prefixes[ADDR_PREFIX])) {
+                instruction.types[instruction.operands] |= DISP32;
+            } else {
+                instruction.types[instruction.operands] |= DISP16;
+            }
             
             if (finalize_displacement (instruction.disps[instruction.operands], operand_start)) {
                 return 1;
@@ -2708,7 +2712,7 @@ static int intel_parse_name (struct expr *expr, char *name) {
             expr->add_symbol = 0;
             expr->op_symbol = 0;
             
-            expr->add_number = intel_types[i].size[0];
+            expr->add_number = intel_types[i].size[(bits == 16) ? 0 : 1];
             return 1;
         
         }
@@ -3529,11 +3533,11 @@ static int process_operands (void) {
                     
                     } else {
                     
+                        instruction.modrm.regmem = MODRM_REGMEM_TWO_BYTE_ADDRESSING;
                         instruction.sib.base = SIB_BASE_NO_BASE_REGISTER;
+                        
                         instruction.sib.index = instruction.index_reg->number;
                         instruction.sib.scale = instruction.log2_scale_factor;
-                        
-                        instruction.modrm.regmem = MODRM_REGMEM_TWO_BYTE_ADDRESSING;
                         
                         instruction.types[operand] &= ~DISP;
                         instruction.types[operand] |= DISP32;
@@ -3546,7 +3550,7 @@ static int process_operands (void) {
                     
                         case 3:
                         
-                            if (instruction.index_reg == 0) {
+                            if (!instruction.index_reg) {
                                 instruction.modrm.regmem = 7;
                             } else {
                                 instruction.modrm.regmem = (instruction.index_reg->number - 6);
@@ -3556,7 +3560,7 @@ static int process_operands (void) {
                         
                         case 5:
                         
-                            if (instruction.index_reg == 0) {
+                            if (!instruction.index_reg) {
                             
                                 instruction.modrm.regmem = 6;
                                 
