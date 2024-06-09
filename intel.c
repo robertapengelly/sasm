@@ -1006,11 +1006,11 @@ static void machine_dependent_set_march (const char *optarg) {
     
     free (orig_arg);
     
-    if ((cpu_arch_flags & CPU_386)) {
+    /*if ((cpu_arch_flags & CPU_386)) {
         bits = 32;
     } else if ((cpu_arch_flags & CPU_8086)) {
         bits = 16;
-    }
+    }*/
 
 }
 
@@ -1163,7 +1163,7 @@ static void handler_extern (char *start, char **pp) {
             
             *pp = skip_whitespace (*pp);
             
-            if (xstrcasecmp (qualifier,  "byte") && xstrcasecmp (qualifier,  "word") && xstrcasecmp (qualifier,  "dword")) {
+            if (xstrcasecmp (qualifier, "byte") && xstrcasecmp (qualifier, "word") && xstrcasecmp (qualifier, "dword")) {
             
                 free (qualifier);
                 goto error;
@@ -1285,6 +1285,87 @@ static void handler_model (char *start, char **pp) {
 
 }
 
+static void handler_option (char *start, char **pp) {
+
+    char *arg, *caret;
+    
+    for (;;) {
+    
+        caret = (*pp = skip_whitespace (*pp));
+        
+        if (!(arg = symname (pp))) {
+        
+            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "expected option list");
+            
+            ignore_rest_of_line (pp);
+            break;
+        
+        }
+        
+        if (xstrcasecmp (arg, "segment") == 0) {
+        
+            caret = (*pp = skip_whitespace (*pp));
+            free (arg);
+            
+            if (**pp != ':') {
+            
+                report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "expected colon after option");
+                
+                ignore_rest_of_line (pp);
+                break;
+            
+            }
+            
+            caret = (*pp = skip_whitespace (*pp + 1));
+            
+            if (!(arg = symname (pp))) {
+            
+                report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "expected option value");
+                
+                ignore_rest_of_line (pp);
+                break;
+            
+            }
+            
+            if (xstrcasecmp (arg, "use16") == 0 || xstrcasecmp (arg, "use32") == 0) {
+            
+                bits = atoi (arg + 3);
+                
+                free (arg);
+                goto _next;
+            
+            }
+            
+            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "'%s' is an invalid value", arg);
+            
+            ignore_rest_of_line (pp);
+            free (arg);
+            
+            break;
+        
+        }
+        
+        report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "'%s' is an invalid option", arg);
+        
+        ignore_rest_of_line (pp);
+        free (arg);
+        
+        break;
+        
+    _next:
+        
+        *pp = skip_whitespace (*pp);
+        
+        if (**pp != ',') {
+            break;
+        }
+        
+        (*pp)++;
+    
+    }
+
+}
+
 static struct pseudo_op_entry pseudo_op_table[] = {
 
     {   ".8086",        &handler_8086       },
@@ -1310,6 +1391,10 @@ static struct pseudo_op_entry pseudo_op_table[] = {
     {   "extrn",        &handler_extern     },
     
     {   ".model",       &handler_model      },
+    
+    {   ".option",      &handler_option     },
+    {   "option",       &handler_option     },
+    
     {   0,              0                   }
 
 };
@@ -1784,7 +1869,7 @@ static int finalize_displacement (struct expr *expr, const char *disp_start) {
 
 static int base_index_check (char *operand_string) {
 
-    if (bits == 32) {
+    if ((cpu_arch_flags & CPU_386)) {
     
         if ((instruction.base_reg && !(instruction.base_reg->type & REG32))
             || (instruction.index_reg && (!(instruction.index_reg->type & BASE_INDEX) || !(instruction.index_reg->type & REG32)))) {
