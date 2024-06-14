@@ -266,7 +266,7 @@ static void handle_constant (char *start, char **pp, int size) {
                     
                     if (expr.type == EXPR_TYPE_CONSTANT) {
                     
-                        repeat = expr.add_number;
+                        repeat = expr.add_number * size;
                         
                         if (repeat == 0) {
                         

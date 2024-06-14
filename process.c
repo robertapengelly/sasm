@@ -338,7 +338,7 @@ static void handler_error (char *start, char **pp) {
     }
     
     temp = xmalloc (1 + strlen (type) + 1 + strlen (*pp) + 1);
-    sprintf (temp, "#%s %s", type, *pp);
+    sprintf (temp, "%%%s %s", type, *pp);
     
     report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start + 1), "%s", temp);
     free (temp);
@@ -473,7 +473,7 @@ static void handler_warning (char *start, char **pp) {
     }
     
     temp = xmalloc (1 + strlen (type) + 1 + strlen (*pp) + 1);
-    sprintf (temp, "#%s %s", type, *pp);
+    sprintf (temp, "%%%s %s", type, *pp);
     
     report_line_at (get_filename (), get_line_number (), REPORT_WARNING, start, skip_whitespace (start + 1), "%s", temp);
     free (temp);
