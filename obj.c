@@ -233,6 +233,10 @@ void output_obj (FILE *fp) {
             write_to_byte_array (symbol_entry.n_strx, string_table_pos, 4);
             string_table_pos += strlen (symbol->name) + 1;
             
+            if (state->ext) {
+                string_table_pos += strlen (state->ext);
+            }
+            
             if (symbol->section == undefined_section) {
                 symbol_entry.n_type = N_UNDF;
             } else if (symbol->section == text_section) {
@@ -279,6 +283,17 @@ void output_obj (FILE *fp) {
     
         if (symbol_is_external (symbol) || symbol_is_undefined (symbol)) {
         
+            if (state->ext) {
+            
+                if (fwrite (state->ext, strlen (state->ext), 1, fp) != 1) {
+                
+                    report_at (program_name, 0, REPORT_ERROR, "failed to write string table");
+                    return;
+                
+                }
+            
+            }
+            
             if (fwrite (symbol->name, strlen (symbol->name) + 1, 1, fp) != 1) {
             
                 report_at (program_name, 0, REPORT_ERROR, "failed to write string table");
