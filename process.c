@@ -1067,8 +1067,12 @@ static void handle_org (char *start, char **pp) {
 }
 
 extern void machine_dependent_assemble_line (char *start, char *line);
+
 extern void machine_dependent_handle_proc (char *start, char **pp, char *name);
-extern void machine_dependent_handle_endp (char *start, char **pp, char *name);
+extern void machine_dependent_handle_endp (char *start, char *name);
+
+extern void machine_dependent_handle_segment (char *start, char **pp, char *name);
+extern void machine_dependent_handle_ends (char *start, char *name);
 
 static char *find_end_of_line (char *line) {
 
@@ -1142,6 +1146,15 @@ static void process_line (char *line, char *line_end) {
             if (xstrcasecmp (arg, "proc") == 0 || xstrcasecmp (arg, "endp") == 0) {
             
                 report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "procedure must have a name");
+                
+                ignore_rest_of_line (&line);
+                goto check;
+            
+            }
+            
+            if (xstrcasecmp (arg, "segment") == 0 || xstrcasecmp (arg, "ends") == 0) {
+            
+                report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "segment must have a name");
                 
                 ignore_rest_of_line (&line);
                 goto check;
@@ -1247,7 +1260,25 @@ static void process_line (char *line, char *line_end) {
                     
                     if (xstrcasecmp (directive, "endp") == 0) {
                     
-                        machine_dependent_handle_endp (start, &line, arg);
+                        machine_dependent_handle_endp (start, arg);
+                        
+                        free (directive);
+                        goto check;
+                    
+                    }
+                    
+                    if (xstrcasecmp (directive, "segment") == 0) {
+                    
+                        machine_dependent_handle_segment (start, &line, arg);
+                        
+                        free (directive);
+                        goto check;
+                    
+                    }
+                    
+                    if (xstrcasecmp (directive, "ends") == 0) {
+                    
+                        machine_dependent_handle_ends (start, arg);
                         
                         free (directive);
                         goto check;
@@ -1299,7 +1330,7 @@ void process_file (const char *ifile) {
     void *load_line_internal_data = NULL;
     
     struct cond *cond;
-    int cond_idx, proc_idx;
+    int cond_idx, proc_idx, seg_idx;
     
     struct hashtab_name *key;
     struct macro *m;
@@ -1484,6 +1515,13 @@ void process_file (const char *ifile) {
         
             struct proc *proc = (struct proc *) state->procs.data[proc_idx];
             report_at (proc->filename, proc->line_number, REPORT_ERROR, "procedure %s is not closed", proc->name);
+        
+        }
+        
+        for (seg_idx = 0; seg_idx < state->segs.length; seg_idx++) {
+        
+            struct segment *seg = (struct segment *) state->segs.data[seg_idx];
+            report_at (seg->filename, seg->line_number, REPORT_ERROR, "segment %s is not closed", seg->name);
         
         }
     

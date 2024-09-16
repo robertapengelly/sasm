@@ -1524,12 +1524,118 @@ void machine_dependent_handle_proc (char *start, char **pp, char *name) {
 
 }
 
-void machine_dependent_handle_endp (char *start, char **pp, char *name) {
+void machine_dependent_handle_segment (char *start, char **pp, char *name) {
+
+    struct segment *seg;
+    char *caret, *arg, saved_ch;
+    
+    seg = xmalloc (sizeof (*seg));
+    seg->name = xstrdup (name);
+    
+    seg->filename = xstrdup (get_filename ());
+    seg->line_number = get_line_number ();
+    
+    vec_push (&state->segs, (void *) seg);
+    
+    seg->old_bits = bits;
+    seg->old_section = xstrdup (section_get_name (current_section));
+    
+    if (cpu_arch_name) {
+    
+        seg->old_cpu = xmalloc (strlen (cpu_arch_name) + 1);
+        strcpy (seg->old_cpu, cpu_arch_name);
+    
+    }
+    
+    if (cpu_extensions_name && strcmp (cpu_extensions_name, "")) {
+    
+        if (cpu_arch_name) {
+        
+            seg->old_cpu = xrealloc (seg->old_cpu, strlen (cpu_arch_name) + 1 + strlen (cpu_extensions_name) + 1);
+            sprintf (seg->old_cpu, "%s+%s", cpu_arch_name, cpu_extensions_name + 1);
+        
+        } else {
+        
+            seg->old_cpu = xmalloc (strlen (cpu_extensions_name) + 1);
+            strcpy (seg->old_cpu, cpu_extensions_name + 1);
+        
+        }
+    
+    }
+    
+    caret = (*pp = skip_whitespace (*pp));
+    
+    while (!is_end_of_line[(int) *caret]) {
+    
+        if (**pp == '\'') {
+        
+            arg = ++(*pp);
+            
+            while (!is_end_of_line[(int) **pp] && **pp != '\'') {
+                (*pp)++;
+            }
+            
+            saved_ch = **pp;
+            **pp = '\0';
+        
+        } else {
+        
+            arg = symname (pp);
+            saved_ch = 0;
+        
+        }
+        
+        if (!arg) {
+            break;
+        }
+        
+        if (xstrcasecmp (arg, "use16") == 0) {
+        
+            machine_dependent_set_march ("i8086+8087");
+            bits = 16;
+        
+        } else if (xstrcasecmp (arg, "use32") == 0) {
+        
+            machine_dependent_set_march ("i386+387");
+            bits = 32;
+        
+        } else if (xstrcasecmp (arg, "code")) {
+            section_set_by_name (".text");
+        } else if (xstrcasecmp (arg, "data")) {
+            section_set_by_name (".data");
+        } else if (xstrcasecmp (arg, "bss")) {
+            section_set_by_name (".bss");
+        } else {
+        
+            **pp = saved_ch;
+            
+            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "invalid option passed to segment");
+            ignore_rest_of_line (pp);
+            
+            return;
+        
+        }
+        
+        if (saved_ch) { **pp = saved_ch; };
+        
+        if (**pp == '\'') { (*pp)++; }
+        caret = (*pp = skip_whitespace (*pp));
+    
+    }
+    
+    if (!is_end_of_line[(int) **pp]) {
+    
+        report_at (get_filename (), get_line_number (), REPORT_ERROR, "invalid option passed to segment");
+        ignore_rest_of_line (pp);
+    
+    }
+
+}
+
+void machine_dependent_handle_endp (char *start, char *name) {
 
     struct proc *proc;
     int last;
-    
-    (void) pp;
     
     if (state->procs.length == 0) {
     
@@ -1550,8 +1656,47 @@ void machine_dependent_handle_endp (char *start, char **pp, char *name) {
     
     free (proc->name);
     free (proc->filename);
+    free (vec_pop (&state->procs));
+
+}
+
+void machine_dependent_handle_ends (char *start, char *name) {
+
+    struct segment *seg;
+    int last;
     
-    vec_pop (&state->procs);
+    if (state->segs.length == 0) {
+    
+        report_at (get_filename (), get_line_number (), REPORT_ERROR, "block nesting error");
+        return;
+    
+    }
+    
+    last = state->segs.length - 1;
+    seg = state->segs.data[last];
+    
+    if (strcmp (seg->name, name)) {
+    
+        report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start), "segment name does not match");
+        return;
+    
+    }
+    
+    section_set_by_name (seg->old_section);
+    free (seg->old_section);
+    
+    bits = seg->old_bits;
+    
+    if (seg->old_cpu) {
+    
+        machine_dependent_set_march (seg->old_cpu);
+        free (seg->old_cpu);
+    
+    }
+    
+    free (seg->name);
+    free (seg->filename);
+    free (vec_pop (&state->segs));
 
 }
 

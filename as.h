@@ -20,6 +20,16 @@ struct proc {
 
 };
 
+struct segment {
+
+    char *name, *old_section, *old_cpu;
+    int old_bits;
+    
+    char *filename;
+    unsigned long line_number;
+
+};
+
 #define     AS_OUTPUT_OBJ               0x00
 #define     AS_OUTPUT_BIN               0x01
 
@@ -32,6 +42,8 @@ struct as_state {
     int model, data_size;
     
     struct vector procs;
+    struct vector segs;
+    
     char *ext;
     
     struct symbol *end_symbol;
