@@ -1,14 +1,14 @@
 /******************************************************************************
- * @file            obj.c
+ * @file            elks.c
  *****************************************************************************/
 #include    <stdio.h>
 #include    <stdlib.h>
 #include    <string.h>
 
 #include    "as.h"
+#include    "elks.h"
 #include    "fixup.h"
 #include    "frag.h"
-#include    "obj.h"
 #include    "report.h"
 #include    "section.h"
 #include    "symbol.h"
@@ -25,7 +25,7 @@ static void write_to_byte_array (unsigned char *arr, unsigned long value, int si
 
 static int output_relocation (struct fixup *fixup, unsigned long start_address_of_section, FILE *fp) {
 
-    struct relocation_info reloc;
+    struct elks_relocation_info reloc;
     
     long log2_of_size, size;
     unsigned long r_symbolnum;
@@ -35,11 +35,11 @@ static int output_relocation (struct fixup *fixup, unsigned long start_address_o
     if (symbol_is_section_symbol (fixup->add_symbol)) {
     
         if (symbol_get_section (fixup->add_symbol) == text_section) {
-            r_symbolnum = N_TEXT;
+            r_symbolnum = ELKS_N_TEXT;
         } else if (symbol_get_section (fixup->add_symbol) == data_section) {
-            r_symbolnum = N_DATA;
+            r_symbolnum = ELKS_N_DATA;
         } else if (symbol_get_section (fixup->add_symbol) == bss_section) {
-            r_symbolnum = N_BSS;
+            r_symbolnum = ELKS_N_BSS;
         } else {
         
             report_at (__FILE__, __LINE__, REPORT_INTERNAL_ERROR, "invalid section %s", section_get_name (symbol_get_section (fixup->add_symbol)));
@@ -89,7 +89,7 @@ static int output_relocation (struct fixup *fixup, unsigned long start_address_o
 
 }
 
-void output_obj (FILE *fp) {
+void output_elks (FILE *fp) {
 
     unsigned long start_address_of_data;
     struct fixup *fixup;
@@ -103,10 +103,15 @@ void output_obj (FILE *fp) {
     unsigned long text_size, data_size, bss_size;
     unsigned long tr_size, dr_size;
     
-    struct exec header;
+    struct elks_exec header;
     memset (&header, 0, sizeof (header));
     
-    write_to_byte_array (header.a_info, 0x00640000 | MAGIC, 4);
+    header.a_magic[0] = ((ELKS_MAGIC >> 8) & 0xff);
+    header.a_magic[1] = (ELKS_MAGIC & 0xff);
+    
+    header.a_flags = 0x10;
+    header.a_cpu = 0x04;
+    header.a_hdrlen = sizeof (header);
     
     if ((symbol = state->end_symbol)) {
         write_to_byte_array (header.a_entry, symbol_get_value (symbol), 4);
@@ -193,7 +198,7 @@ void output_obj (FILE *fp) {
             return;
         }
         
-        tr_size += sizeof (struct relocation_info);
+        tr_size += sizeof (struct elks_relocation_info);
     
     }
     
@@ -214,7 +219,7 @@ void output_obj (FILE *fp) {
             return;
         }
         
-        dr_size += sizeof (struct relocation_info);
+        dr_size += sizeof (struct elks_relocation_info);
     
     }
     
@@ -227,7 +232,7 @@ void output_obj (FILE *fp) {
     
         if (symbol_is_external (symbol) || symbol_is_undefined (symbol)) {
         
-            struct nlist symbol_entry;
+            struct elks_nlist symbol_entry;
             memset (&symbol_entry, 0, sizeof (symbol_entry));
             
             write_to_byte_array (symbol_entry.n_strx, string_table_pos, 4);
@@ -238,15 +243,15 @@ void output_obj (FILE *fp) {
             }
             
             if (symbol->section == undefined_section) {
-                symbol_entry.n_type = N_UNDF;
+                symbol_entry.n_type = ELKS_N_UNDF;
             } else if (symbol->section == text_section) {
-                symbol_entry.n_type = N_TEXT;
+                symbol_entry.n_type = ELKS_N_TEXT;
             } else if (symbol->section == data_section) {
-                symbol_entry.n_type = N_DATA;
+                symbol_entry.n_type = ELKS_N_DATA;
             } else if (symbol->section == bss_section) {
-                symbol_entry.n_type = N_BSS;
+                symbol_entry.n_type = ELKS_N_BSS;
             } else if (symbol->section == absolute_section) {
-                symbol_entry.n_type = N_ABS;
+                symbol_entry.n_type = ELKS_N_ABS;
             } else {
             
                 report_at (__FILE__, __LINE__, REPORT_INTERNAL_ERROR, "invalid section %s", section_get_name (symbol->section));
@@ -255,7 +260,7 @@ void output_obj (FILE *fp) {
             }
             
             write_to_byte_array (symbol_entry.n_value, symbol_get_value (symbol), 4);
-            symbol_entry.n_type |= N_EXT;
+            symbol_entry.n_type |= ELKS_N_EXT;
             
             if (fwrite (&symbol_entry, sizeof (symbol_entry), 1, fp) != 1) {
             

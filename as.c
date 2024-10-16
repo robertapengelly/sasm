@@ -17,7 +17,7 @@ struct as_state *state = 0;
 const char *program_name = 0;
 
 extern void output_binary (FILE *fp);
-extern void output_obj (FILE *fp);
+extern void output_elks (FILE *fp);
 
 extern void keywords_init (void);
 extern void sections_init (void);
@@ -175,7 +175,7 @@ int main (int argc, char **argv) {
     
     }
     
-    output_obj (state->ofp);
+    output_elks (state->ofp);
     
     if (get_error_count () > 0) {
         return EXIT_FAILURE;
