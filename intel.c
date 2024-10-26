@@ -2267,7 +2267,7 @@ static int intel_parse_operand (char *start, char *operand_string) {
                         instruction.disp_operands = 0;
                         
                         instruction.operands = 2;
-                        instruction.types[0] &= ~ANY_MEM;
+                        instruction.types[0] &= ~DISP;
                         
                         return 0;
                     
@@ -2357,9 +2357,9 @@ static int intel_parse_operand (char *start, char *operand_string) {
             }
             
             if (reg_table[expr->add_number].number == REG_FLAT_NUMBER) {
-                instruction.segments[instruction.operands] = 0;
+                instruction.segments[instruction.mem_operands] = 0;
             } else {
-                instruction.segments[instruction.operands] = &reg_table[expr->add_number];
+                instruction.segments[instruction.mem_operands] = &reg_table[expr->add_number];
             }
         
         }
@@ -4208,6 +4208,10 @@ enum expr_type machine_dependent_parse_operator (char **pp, char *name, char *or
 
     unsigned int i;
     
+    if (!intel_syntax) {
+        return EXPR_TYPE_ABSENT;
+    }
+    
     if (!name) {
     
         if (operands != 2) {
@@ -4288,6 +4292,10 @@ struct section *machine_dependent_simplified_expression_read_into (char *start, 
 
     struct section *ret_section;
     int ret;
+    
+    if (!intel_syntax) {
+        return expression_read_into (start, pp, expr);
+    }
     
     memset (&intel_state, 0, sizeof (intel_state));
     intel_state.operand_modifier = EXPR_TYPE_ABSENT;
