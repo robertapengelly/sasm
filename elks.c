@@ -110,7 +110,7 @@ void output_elks (FILE *fp) {
     header.a_magic[1] = (ELKS_MAGIC & 0xff);
     
     header.a_flags = 0x10;
-    header.a_cpu = 0x04;
+    header.a_cpu = (state->format == AS_OUTPUT_I386_ELKS) ? 0x10 : 0x04;
     header.a_hdrlen = sizeof (header);
     
     if ((symbol = state->end_symbol)) {

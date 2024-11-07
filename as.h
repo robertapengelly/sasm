@@ -30,8 +30,10 @@ struct segment {
 
 };
 
-#define     AS_OUTPUT_OBJ               0x00
-#define     AS_OUTPUT_BIN               0x01
+#define     AS_OUTPUT_IA16_ELKS         0x00
+#define     AS_OUTPUT_I386_ELKS         0x01
+
+#define     AS_OUTPUT_BIN               0x02
 
 struct as_state {
 

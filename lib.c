@@ -84,6 +84,9 @@ static void _print_usage (void) {
         fprintf (stderr, "    -Uname                Undefine 'name'.\n");
         
         fprintf (stderr, "\n");
+        fprintf (stderr, "    -f FORMAT             Specify the format of object file (default elks-ia16)\n");
+        fprintf (stderr, "                              Supported formats are:\n");
+        fprintf (stderr, "                                  elks-ia16, elks-i386, binary\n");
         fprintf (stderr, "    -l FILE               Print listings to file FILE.\n");
         fprintf (stderr, "    -o OBJFILE            Name the object-file output OBJFILE (default a.out).\n");
         
@@ -397,9 +400,16 @@ void parse_args (int argc, char **argv, int optind) {
                 
                 }
                 
-                if (xstrcasecmp (optarg, "obj") == 0) {
+                if (xstrcasecmp (optarg, "elks-ia16") == 0) {
                 
-                    state->format = AS_OUTPUT_OBJ;
+                    state->format = AS_OUTPUT_IA16_ELKS;
+                    break;
+                
+                }
+                
+                if (xstrcasecmp (optarg, "elks-i386") == 0) {
+                
+                    state->format = AS_OUTPUT_I386_ELKS;
                     break;
                 
                 }
