@@ -1983,12 +1983,12 @@ static int finalize_immediate (struct expr *expr, const char *imm_start) {
     } else if (expr->type == EXPR_TYPE_CONSTANT) {
     
         /* Size will be determined later. */
-        instruction.types[instruction.operands] |= IMM16;
+        instruction.types[instruction.operands] |= IMM32;
     
     } else {
     
         /* It is an address and size will determined later. */
-        instruction.types[instruction.operands] = IMM8 | IMM16;
+        instruction.types[instruction.operands] = IMM8 | IMM16 | IMM32;
     
     }
     
@@ -3103,7 +3103,7 @@ static int match_template (void) {
         if (template->cpu_flags && (template->cpu_flags & cpu_arch_flags) == 0) {
             continue;
         }
-
+        
         if (template->opcode_modifier & suffix_check) {
             continue;
         }
