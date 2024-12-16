@@ -1219,7 +1219,7 @@ static void process_line (char *line, char *line_end) {
                         report_line_at (get_filename (), get_line_number (), REPORT_WARNING, start, caret, "label alone without colon");
                     }
                     
-                    free (arg);
+                    /*free (arg);*/
                     continue;
                 
                 }
