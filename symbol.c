@@ -238,7 +238,7 @@ struct symbol *symbol_label (char *start, char *caret, char *name) {
     
     } else {
     
-        if (xstrcasecmp (name, "DGROUP") == 0 || strcmp (name, "_end") == 0 || strcmp (name, "_edata") == 0) {
+        if (xstrcasecmp (name, "DGROUP") == 0 || xstrcasecmp (name, "__etext") == 0 || xstrcasecmp (name, "__edata") == 0 || xstrcasecmp (name, "__end") == 0) {
             report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "symbol '%s' is already defined", name);
         } else {
         

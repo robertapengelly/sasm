@@ -423,6 +423,8 @@ static struct template template_table[] = {
     
     { "ret", 0, 0xC3, NONE, WL_SUF | DEFAULT_SIZE, { 0, 0, 0 }, CPU_8086 },
     { "ret", 1, 0xC2, NONE, WL_SUF | DEFAULT_SIZE, { IMM16, 0, 0 }, CPU_8086 },
+    { "retn", 0, 0xC3, NONE, WL_SUF | DEFAULT_SIZE, { 0, 0, 0 }, CPU_8086 },
+    { "retn", 1, 0xC2, NONE, WL_SUF | DEFAULT_SIZE, { IMM16, 0, 0 }, CPU_8086 },
     { "retf", 0, 0xCB, NONE, WL_SUF | DEFAULT_SIZE, { 0, 0, 0 }, CPU_8086 },
     { "retf", 1, 0xCA, NONE, WL_SUF | DEFAULT_SIZE, { IMM16, 0, 0 }, CPU_8086 },
     { "lret", 0, 0xCB, NONE, WL_SUF | DEFAULT_SIZE, { 0, 0, 0 }, CPU_8086 },
@@ -2056,6 +2058,14 @@ static int intel_parse_operand (char *start, char *operand_string) {
     intel_syntax = -1;
     expression_read_into (start, &operand_string, expr);
     
+    if (expr->type == EXPR_TYPE_SYMBOL) {
+    
+        if (xstrcasecmp (expr->add_symbol->name, "DGROUP") == 0 || xstrcasecmp (expr->add_symbol->name, "__etext") == 0 || xstrcasecmp (expr->add_symbol->name, "__edata") == 0 || xstrcasecmp (expr->add_symbol->name, "__end") == 0) {
+            expr->type = EXPR_TYPE_OFFSET;
+        }
+    
+    }
+    
     ret = intel_simplify_expr (expr);
     intel_syntax = 1;
     
@@ -3182,11 +3192,11 @@ static int match_template (void) {
     
     if (state->model < 7) {
     
-        if (template->base_opcode == 0xC3 && xstrcasecmp (template->name, "retn") && instruction.operands == 0 && state->model >= 4 && state->procs.length > 0) {
+        if (template->base_opcode == 0xC3 && xstrcasecmp (template->name, "retn") && instruction.operands == 0 && state->model >= 4/* && state->procs.length > 0*/) {
             instruction.template.base_opcode = 0xCB;
         }
         
-        if (template->base_opcode == 0xC2 && instruction.operands == 1 && state->model >= 4 && state->procs.length > 0) {
+        if (template->base_opcode == 0xC2 && instruction.operands == 1 && state->model >= 4/* && state->procs.length > 0*/) {
             instruction.template.base_opcode = 0xCA;
         }
     
@@ -3965,7 +3975,7 @@ static void output_call_or_jumpbyte (void) {
         report_at (get_filename (), get_line_number (), REPORT_WARNING, "skipping prefixes on this instruction");
     }
     
-    if (state->model < 7 && state->procs.length > 0) {
+    if (state->model < 7/* && state->procs.length > 0*/) {
     
         if (instruction.template.base_opcode == 0xE8 && size == 2 && state->model >= 4) {
         
@@ -3996,7 +4006,7 @@ static void output_call_or_jumpbyte (void) {
         fixup = fixup_new_expr (current_frag, current_frag->fixed_size, size, instruction.disps[0], 1, RELOC_TYPE_DEFAULT);
         frag_increase_fixed_size (size);
     
-    } else if (state->procs.length == 0 || size == 2 || state->model == 7) {
+    } else if (/*state->procs.length == 0 || */size == 2 || state->model == 7) {
     
         if (instruction.disps[0]->type == EXPR_TYPE_CONSTANT) {
         
@@ -4020,7 +4030,7 @@ static void output_call_or_jumpbyte (void) {
         if (instruction.disps[0]->type == EXPR_TYPE_CONSTANT) {
             machine_dependent_number_to_chars (p, instruction.disps[0]->add_number, size);
         } else {
-            fixup = fixup_new_expr (current_frag, p - current_frag->buf, size, instruction.disps[0], 1, RELOC_TYPE_FAR_CALL);
+            fixup = fixup_new_expr (current_frag, p - current_frag->buf, size, instruction.disps[0], 0, RELOC_TYPE_FAR_CALL);
         }
     
     }
@@ -4516,19 +4526,23 @@ void machine_dependent_apply_fixup (struct fixup *fixup, unsigned long value) {
             
             } else {
             
+                /*report_at (get_filename (), __LINE__, REPORT_WARNING, "value: %lx", value + fixup->size + 1);*/
+                
                 value -= (fixup->where + fixup->frag->address);
                 value -= fixup->size;
                 
                 machine_dependent_number_to_chars (p - 1, 0x0E, 1);
+                machine_dependent_number_to_chars (p + 0, 0xE8, 1);
                 machine_dependent_number_to_chars (p + 1, value + 1, 2);
-                
-                machine_dependent_number_to_chars (p, 0xE8, 1);
                 machine_dependent_number_to_chars (p + 3, 0x90, 1);
             
             }
         
         } else {
+        
+            machine_dependent_number_to_chars (p - 1, 0xFF, 1);
             machine_dependent_number_to_chars (p, 0, fixup->size);
+        
         }
     
     } else {

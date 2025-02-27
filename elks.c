@@ -9,6 +9,7 @@
 #include    "elks.h"
 #include    "fixup.h"
 #include    "frag.h"
+#include    "lib.h"
 #include    "report.h"
 #include    "section.h"
 #include    "symbol.h"
@@ -69,12 +70,12 @@ static int output_relocation (struct fixup *fixup, unsigned long start_address_o
         r_symbolnum |= (1LU << 28);
     }
     
-    for (log2_of_size = -1, size = fixup->size; size; size >>= 1, log2_of_size++);
-    r_symbolnum |= ((unsigned long) log2_of_size << 29);
-    
-    if (fixup->reloc_type == RELOC_TYPE_FAR_CALL) {
+    if (xstrcasecmp (fixup->add_symbol->name, "DGROUP") == 0) {
         r_symbolnum |= (1LU << 27);
     }
+    
+    for (log2_of_size = -1, size = fixup->size; size; size >>= 1, log2_of_size++);
+    r_symbolnum |= ((unsigned long) log2_of_size << 29);
     
     write_to_byte_array (reloc.r_symbolnum, r_symbolnum, 4);
     
