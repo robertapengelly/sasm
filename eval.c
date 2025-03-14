@@ -268,7 +268,8 @@ static unsigned int eval_unary (unsigned int lhs, char *start, char **pp) {
             (*pp)++;
         }
         
-        sprintf (caret, "%.*s", (int) (*pp - caret - 1), caret + 1);
+        memmove (caret, caret + 1, (*pp - caret) - 1);
+        *(caret + ((*pp - caret) - 1)) = '\0';
         
         lhs = eval_unary (lhs, start, &caret);
         lhs = eval_expr (lhs, start, &caret, 15);
