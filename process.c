@@ -356,9 +356,6 @@ static void handler_include (char *start, char **pp) {
     char *inc_path, *tmp;
     FILE *fp;
     
-    struct hashtab_name *key;
-    struct macro *m;
-    
     if (**pp != '"' && **pp != '<') {
     
         report_line_at (orig_fn, orig_ln, REPORT_ERROR, start, *pp, "%%include expects \"FILENAME\" or <FILENAME>");
@@ -428,33 +425,6 @@ static void handler_include (char *start, char **pp) {
 end:
     
     set_filename_and_line_number (orig_fn, orig_ln);
-    
-    if ((key = find_macro ("__FILE__"))) {
-    
-        if ((m = get_macro (key)) && m->type == MACRO_BUILTIN) {
-        
-            free (m->value);
-            
-            m->value = xmalloc (1 + strlen (orig_fn) + 2);
-            sprintf (m->value, "\"%s\"", orig_fn);
-        
-        }
-    
-    }
-    
-    if ((key = find_macro ("__LINE__"))) {
-    
-        if ((m = get_macro (key)) && m->type == MACRO_BUILTIN) {
-        
-            free (m->value);
-            
-            m->value = xmalloc (23);
-            sprintf (m->value, "%lu", orig_ln);
-        
-        }
-    
-    }
-    
     free (sname);
 
 }
@@ -539,32 +509,10 @@ struct pp_pseudo_op_entry *find_directive (char *name) {
 
 static void init_builtin_macros (void) {
 
-    static char *builtins[] = { "__FILE__", "__LINE__" };
     char *name;
     
     struct hashtab_name *key;
     struct macro *m;
-    
-    unsigned long cnt = (sizeof (builtins) / sizeof (*builtins));
-    unsigned i;
-    
-    for (i = 0; i < cnt; i++) {
-    
-        name = xstrdup (builtins[i]);
-        
-        if ((key = hashtab_alloc_name (name))) {
-        
-            m = xmalloc (sizeof (*m));
-            m->type = MACRO_BUILTIN;
-            
-            m->name = name;
-            m->value = xstrdup ("");
-            
-            push_macro (key, m);
-        
-        }
-    
-    }
     
     name = xstrdup ("__SASM__");
     
@@ -575,59 +523,6 @@ static void init_builtin_macros (void) {
         
         m->name = name;
         m->value = "1";
-        
-        push_macro (key, m);
-    
-    }
-
-}
-
-static void init_date_time_macros (void) {
-
-    char *timep, *buf, *name, temp[3] = { 0 };
-    time_t now;
-    
-    struct hashtab_name *key;
-    struct macro *m;
-    
-    time (&now);
-    timep = ctime (&now);
-    
-    name = xstrdup ("__TIME__");
-    
-    if ((key = hashtab_alloc_name (name))) {
-    
-        buf = xmalloc (11);
-        sprintf (buf, "\"%.8s\"", timep + 11);;
-        
-        m = xmalloc (sizeof (*m));
-        m->type = MACRO_BUILTIN;
-        
-        m->name = name;
-        m->value = buf;
-        
-        push_macro (key, m);
-    
-    }
-    
-    name = xstrdup ("__DATE__");
-    
-    if ((key = hashtab_alloc_name (name))) {
-    
-        sprintf (temp, "%.2s", timep + 8);
-        buf = xmalloc (14);
-        
-        if (atoi (temp) < 10) {
-            sprintf (buf, "\"%.3s %.1s %.4s\"", timep + 4, timep + 9, timep + 20);
-        } else {
-            sprintf (buf, "\"%.3s %.2s %.4s\"", timep + 4, timep + 8, timep + 20);
-        }
-        
-        m = xmalloc (sizeof (*m));
-        m->type = MACRO_BUILTIN;
-        
-        m->name = name;
-        m->value = buf;
         
         push_macro (key, m);
     
@@ -650,7 +545,6 @@ int preprocess_init (void) {
     }
     
     init_builtin_macros ();
-    init_date_time_macros ();
     
     if (state->pplist) {
     
@@ -1332,9 +1226,6 @@ void process_file (const char *ifile) {
     struct cond *cond;
     int cond_idx, proc_idx, seg_idx;
     
-    struct hashtab_name *key;
-    struct macro *m;
-    
     if (!ifile || strcmp (ifile, "-") == 0) {
     
         set_filename (xstrdup ("<stdin>"));
@@ -1356,21 +1247,6 @@ void process_file (const char *ifile) {
     set_line_number (0);
     new_line_number = 1;
     
-    if ((key = find_macro ("__FILE__"))) {
-    
-        const char *filename = get_filename ();;
-        
-        if (filename && (m = get_macro (key)) && m->type == MACRO_BUILTIN) {
-        
-            free (m->value);
-            
-            m->value = xmalloc (1 + strlen (filename) + 2);
-            sprintf (m->value, "\"%s\"", filename);
-        
-        }
-    
-    }
-    
     load_line_internal_data = load_line_create_internal_data (&new_line_number);
     
     while (!load_line (&line, &line_end, &real_line, &real_line_len, &newlines, fp, &load_line_internal_data)) {
@@ -1382,19 +1258,6 @@ void process_file (const char *ifile) {
         
             update_listing_line (current_frag);
             add_listing_line (real_line, real_line_len, get_filename (), get_line_number ());
-        
-        }
-        
-        if ((key = find_macro ("__LINE__"))) {
-        
-            if ((m = get_macro (key)) && m->type == MACRO_BUILTIN) {
-            
-                free (m->value);
-                
-                m->value = xmalloc (23);
-                sprintf (m->value, "%lu", get_line_number ());
-            
-            }
         
         }
         

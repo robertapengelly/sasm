@@ -118,7 +118,9 @@ struct template {
 struct reg_entry {
 
     const char *name;
-    unsigned int type, number;
+    
+    unsigned long type;
+    unsigned int number;
 
 };
 

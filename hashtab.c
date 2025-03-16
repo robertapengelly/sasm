@@ -103,7 +103,7 @@ static unsigned int hash_string (const void *p, unsigned int length) {
     unsigned int result = 0;
     
     for (i = 0; i < length; i++) {
-        result = (((unsigned short) str[i]) << 4) + (result >> 9) + result + (result >> 3) + (((unsigned short) str[i]) << 2) - (result << 24);
+        result = (((unsigned short) str[i]) << 4) + (result >> 9) + result + (result >> 3) + (((unsigned short) str[i]) << 2) - (result << 12);
     }
     
     return result;
@@ -112,8 +112,8 @@ static unsigned int hash_string (const void *p, unsigned int length) {
 
 struct hashtab_name *hashtab_alloc_name (const char *str) {
 
-    struct hashtab_name *name;
     unsigned int bytes = strlen (str), hash = hash_string (str, bytes);
+    struct hashtab_name *name;
     
     if ((name = malloc (sizeof (*name))) == NULL) {
         return NULL;

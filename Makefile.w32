@@ -12,8 +12,10 @@ CSRC                :=  as.c bin.c cstr.c elks.c eval.c expr.c fixup.c frag.c ha
 all: sasm.exe
 
 clean:
+
 	if exist sasm ( del /q sasm )
 	if exist sasm.exe ( del /q sasm.exe )
 
 sasm.exe: $(CSRC)
+
 	$(CC) $(CFLAGS) -o $@ $^

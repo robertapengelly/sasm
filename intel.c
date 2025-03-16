@@ -890,7 +890,7 @@ struct instruction {
     struct sib_byte sib;
     
     struct reg_entry *base_reg, *index_reg;
-    unsigned int types[MAX_OPERANDS];
+    unsigned long types[MAX_OPERANDS];
     
     struct expr *imms[MAX_OPERANDS];
     struct expr *disps[MAX_OPERANDS];
@@ -3065,7 +3065,9 @@ static void optimize_size_of_imms (void) {
 
 static int match_template (void) {
 
-    unsigned int found_reverse_match = 0, suffix_check = 0;
+    unsigned long suffix_check = 0;
+    unsigned int found_reverse_match = 0;
+    
     struct template *template;
     
     switch (instruction.suffix) {

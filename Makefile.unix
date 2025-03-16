@@ -22,5 +22,6 @@ sasm: $(CSRC)
 endif
 
 clean:
+
 	if [ -f sasm ]; then rm -rf sasm; fi
 	if [ -f sasm.exe ]; then rm -rf sasm.exe; fi
