@@ -631,7 +631,7 @@ static struct section *operand (char *start, char **pp, struct expr *expr, int e
                 
                 if (expr->type == EXPR_TYPE_ABSENT) {
                 
-                    report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, *pp, "bad expression");
+                    report_at (get_filename (), get_line_number (), REPORT_ERROR, "bad expression");
                     (*pp)++;
                     
                     expr->type = EXPR_TYPE_CONSTANT;
