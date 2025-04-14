@@ -4517,6 +4517,8 @@ void machine_dependent_apply_fixup (struct fixup *fixup, unsigned long value) {
     
     if (fixup->reloc_type == RELOC_TYPE_FAR_CALL) {
     
+        *(p - 1) = (state->model > 4) ? 0xFF : 0x9A;
+        
         if (fixup->add_symbol == 0) {
         
             if ((long) value >= 65535) {
@@ -4533,18 +4535,26 @@ void machine_dependent_apply_fixup (struct fixup *fixup, unsigned long value) {
                 value -= (fixup->where + fixup->frag->address);
                 value -= fixup->size;
                 
-                machine_dependent_number_to_chars (p - 1, 0x0E, 1);
-                machine_dependent_number_to_chars (p + 0, 0xE8, 1);
-                machine_dependent_number_to_chars (p + 1, value + 1, 2);
-                machine_dependent_number_to_chars (p + 3, 0x90, 1);
+                if (state->model > 4) {
+                
+                    machine_dependent_number_to_chars (p - 1, 0x0E, 1);
+                    machine_dependent_number_to_chars (p + 0, 0x3E, 1);
+                    machine_dependent_number_to_chars (p + 1, 0xE8, 1);
+                    machine_dependent_number_to_chars (p + 2, value, 2);
+                
+                } else {
+                
+                    machine_dependent_number_to_chars (p - 1, 0x0E, 1);
+                    machine_dependent_number_to_chars (p + 0, 0xE8, 1);
+                    machine_dependent_number_to_chars (p + 1, value + 1, 2);
+                    machine_dependent_number_to_chars (p + 3, 0x90, 1);
+                
+                }
             
             }
         
         } else {
-        
-            machine_dependent_number_to_chars (p - 1, 0xFF, 1);
             machine_dependent_number_to_chars (p, 0, fixup->size);
-        
         }
     
     } else {
