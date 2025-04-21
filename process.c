@@ -9,7 +9,6 @@
 
 #include    "as.h"
 #include    "cstr.h"
-#include    "eval.h"
 #include    "expr.h"
 #include    "frag.h"
 #include    "hashtab.h"
@@ -24,6 +23,203 @@
 #include    "section.h"
 #include    "symbol.h"
 #include    "vector.h"
+
+static char *preprocess_line (char *src, int in_macro) {
+
+    struct cstring cstr;
+    char *line;
+    
+    char *caret = src, *start;
+    char *sname, ch;
+    
+    struct hashtab_name *key;
+    struct macro *m;
+    
+    cstr_new (&cstr);
+    
+    while (!is_end_of_line[(int) *caret]) {
+    
+        start = caret;
+        
+        if (*caret == ' ' || *caret == '\t') {
+        
+            while (*caret == ' ' || *caret == '\t') {
+            
+                cstr_ccat (&cstr, ' ');
+                caret++;
+            
+            }
+            
+            continue;
+        
+        }
+        
+        if (*caret == '"' || *caret == '\'') {
+        
+            ch = *caret++;
+            
+            while (!is_end_of_line[(int) *caret]) {
+            
+                if (*caret == '\\') {
+                
+                    caret++;
+                    
+                    if (!is_end_of_line[(int) *caret]) {
+                        caret++;
+                    }
+                    
+                    continue;
+                
+                }
+                
+                if (*caret == ch) { break; }
+                caret++;
+            
+            }
+            
+            if (*caret != ch) {
+            
+                char *temp = xmalloc ((caret - start) + 2);
+                sprintf (temp, "%.*s%c", (int) (caret - start), start, ch);
+                
+                report_line_at (get_filename (), get_line_number (), REPORT_WARNING, src, start, "missing terminating %c character", ch);
+                cstr_cat (&cstr, temp, strlen (temp));
+                
+                continue;
+            
+            }
+            
+            caret++;
+            
+            cstr_cat (&cstr, start, caret - start);
+            continue;
+        
+        }
+        
+        if (is_name_beginner ((int) *caret)) {
+        
+            sname = symname (&caret);
+            
+            if ((key = find_macro (sname))) {
+            
+                if ((m = get_macro (key))) {
+                
+                    char *pm;
+                    int spaces = 0;
+                    
+                    if (*caret == ' ' || *caret == '\t') {
+                    
+                        cstr_ccat (&cstr, ' ');
+                        
+                        while (*caret == ' ' || *caret == '\t') {
+                        
+                            spaces++;
+                            caret++;
+                        
+                        }
+                    
+                    }
+                    
+                    if ((pm = process_macro (start, &caret, m))) {
+                    
+                        char *temp = preprocess_line (pm, 1);
+                        cstr_cat (&cstr, temp, strlen (temp));
+                        
+                        if (!is_end_of_line[(int) *pm]) {
+                        
+                            while (spaces--) {
+                                cstr_ccat (&cstr, ' ');
+                            }
+                        
+                        }
+                    
+                    }
+                
+                }
+                
+                continue;
+            
+            }
+            
+            cstr_cat (&cstr, start, caret - start);
+            continue;
+        
+        }
+        
+        if (*caret == '@') {
+        
+            char *arg, *temp = (caret + 1);
+            
+            if ((arg = symname (&temp))) {
+            
+                if (xstrcasecmp (arg, "DataSize") == 0) {
+                
+                    caret = temp;
+                    free (arg);
+                    
+                    cstr_ccat (&cstr, state->data_size | 0x30);
+                    continue;
+                
+                }
+                
+                if (xstrcasecmp (arg, "Model") == 0) {
+                
+                    caret = temp;
+                    free (arg);
+                    
+                    cstr_ccat (&cstr, (state->model > 0 ? state->model | 0x30 : '1'));
+                    continue;
+                
+                }
+                
+                free (arg);
+            
+            }
+        
+        }
+        
+        if (isdigit ((int) *caret)) {
+        
+            if (caret[0] == '0' && tolower ((int) caret[1]) == 'x') {
+                caret += 2;
+            }
+            
+            while (isdigit ((int) *caret)) {
+                caret++;
+            }
+            
+            cstr_cat (&cstr, start, caret - start);
+            continue;
+        
+        }
+        
+        if (ispunct ((int) *caret)) {
+        
+            cstr_ccat (&cstr, *caret);
+            
+            caret++;
+            continue;
+        
+        }
+        
+        report_line_at (get_filename (), get_line_number (), REPORT_INTERNAL_ERROR, src, caret, "Do we see this???");
+        caret++;
+    
+    }
+    
+    if (!in_macro && state->ofp) {
+        cstr_ccat (&cstr, '\n');
+    }
+    
+    cstr_ccat (&cstr, '\0');
+    
+    line = xstrdup (cstr.data);;
+    cstr_free (&cstr);
+    
+    return line;
+
+}
+
 
 struct pp_pseudo_op_entry {
 
@@ -52,6 +248,20 @@ static int ignore_line = 0, iflevel = 0;
 static void handler_if (char *start, char **pp) {
 
     struct cond *cond;
+    struct expr expr_s;
+    
+    char *tokenized_line, *tokenized_start;
+    unsigned long pos = *pp - start;
+    
+    tokenized_start = (tokenized_line = preprocess_line (start, 0));
+    tokenized_line += pos;
+    
+    expression_evaluate_and_read_into (tokenized_start, &tokenized_line, &expr_s);
+    free (tokenized_start);
+    
+    if (expr_s.type != EXPR_TYPE_CONSTANT) {
+        report_at (get_filename (), get_line_number (), REPORT_ERROR, "non-constant expression in \"%if\" statement");
+    }
     
     if (!ignore_line) {
     
@@ -64,7 +274,7 @@ static void handler_if (char *start, char **pp) {
         cond->line_number = get_line_number ();
         
         vec_push (&vec_ifstack, cond);
-        ignore_line = !eval (start, pp);
+        ignore_line = (expr_s.add_number == 0);
     
     } else {
         iflevel++;
@@ -165,6 +375,16 @@ static void handler_ifndef (char *start, char **pp) {
 static void handler_elif (char *start, char **pp) {
 
     struct cond *cond;
+    struct expr expr_s;
+    
+    char *tokenized_line, *tokenized_start;
+    unsigned long pos = *pp - start;
+    
+    tokenized_start = (tokenized_line = preprocess_line (start, 0));
+    tokenized_line += pos;
+    
+    expression_evaluate_and_read_into (tokenized_start, &tokenized_line, &expr_s);
+    free (tokenized_start);
     
     if (!iflevel) {
     
@@ -186,7 +406,7 @@ static void handler_elif (char *start, char **pp) {
         
         }
         
-        ignore_line = (ignore_line && !eval (start, pp));
+        ignore_line = (ignore_line && (expr_s.add_number == 0));
     
     }
 
@@ -612,202 +832,6 @@ int preprocess_init (void) {
 
 }
 
-
-static char *preprocess_line (char *src, int in_macro) {
-
-    struct cstring cstr;
-    char *line;
-    
-    char *caret = src, *start;
-    char *sname, ch;
-    
-    struct hashtab_name *key;
-    struct macro *m;
-    
-    cstr_new (&cstr);
-    
-    while (!is_end_of_line[(int) *caret]) {
-    
-        start = caret;
-        
-        if (*caret == ' ' || *caret == '\t') {
-        
-            while (*caret == ' ' || *caret == '\t') {
-            
-                cstr_ccat (&cstr, ' ');
-                caret++;
-            
-            }
-            
-            continue;
-        
-        }
-        
-        if (*caret == '"' || *caret == '\'') {
-        
-            ch = *caret++;
-            
-            while (!is_end_of_line[(int) *caret]) {
-            
-                if (*caret == '\\') {
-                
-                    caret++;
-                    
-                    if (!is_end_of_line[(int) *caret]) {
-                        caret++;
-                    }
-                    
-                    continue;
-                
-                }
-                
-                if (*caret == ch) { break; }
-                caret++;
-            
-            }
-            
-            if (*caret != ch) {
-            
-                char *temp = xmalloc ((caret - start) + 2);
-                sprintf (temp, "%.*s%c", (int) (caret - start), start, ch);
-                
-                report_line_at (get_filename (), get_line_number (), REPORT_WARNING, src, start, "missing terminating %c character", ch);
-                cstr_cat (&cstr, temp, strlen (temp));
-                
-                continue;
-            
-            }
-            
-            caret++;
-            
-            cstr_cat (&cstr, start, caret - start);
-            continue;
-        
-        }
-        
-        if (is_name_beginner ((int) *caret)) {
-        
-            sname = symname (&caret);
-            
-            if ((key = find_macro (sname))) {
-            
-                if ((m = get_macro (key))) {
-                
-                    char *pm;
-                    int spaces = 0;
-                    
-                    if (*caret == ' ' || *caret == '\t') {
-                    
-                        cstr_ccat (&cstr, ' ');
-                        
-                        while (*caret == ' ' || *caret == '\t') {
-                        
-                            spaces++;
-                            caret++;
-                        
-                        }
-                    
-                    }
-                    
-                    if ((pm = process_macro (start, &caret, m))) {
-                    
-                        char *temp = preprocess_line (pm, 1);
-                        cstr_cat (&cstr, temp, strlen (temp));
-                        
-                        if (!is_end_of_line[(int) *pm]) {
-                        
-                            while (spaces--) {
-                                cstr_ccat (&cstr, ' ');
-                            }
-                        
-                        }
-                    
-                    }
-                
-                }
-                
-                continue;
-            
-            }
-            
-            cstr_cat (&cstr, start, caret - start);
-            continue;
-        
-        }
-        
-        if (*caret == '@') {
-        
-            char *arg, *temp = (caret + 1);
-            
-            if ((arg = symname (&temp))) {
-            
-                if (xstrcasecmp (arg, "DataSize") == 0) {
-                
-                    caret = temp;
-                    free (arg);
-                    
-                    cstr_ccat (&cstr, state->data_size | 0x30);
-                    continue;
-                
-                }
-                
-                if (xstrcasecmp (arg, "Model") == 0) {
-                
-                    caret = temp;
-                    free (arg);
-                    
-                    cstr_ccat (&cstr, (state->model > 0 ? state->model | 0x30 : '1'));
-                    continue;
-                
-                }
-                
-                free (arg);
-            
-            }
-        
-        }
-        
-        if (isdigit ((int) *caret)) {
-        
-            if (caret[0] == '0' && tolower ((int) caret[1]) == 'x') {
-                caret += 2;
-            }
-            
-            while (isdigit ((int) *caret)) {
-                caret++;
-            }
-            
-            cstr_cat (&cstr, start, caret - start);
-            continue;
-        
-        }
-        
-        if (ispunct ((int) *caret)) {
-        
-            cstr_ccat (&cstr, *caret);
-            
-            caret++;
-            continue;
-        
-        }
-        
-        report_line_at (get_filename (), get_line_number (), REPORT_INTERNAL_ERROR, src, caret, "Do we see this???");
-        caret++;
-    
-    }
-    
-    if (!in_macro && state->ofp) {
-        cstr_ccat (&cstr, '\n');
-    }
-    
-    cstr_ccat (&cstr, '\0');
-    
-    line = xstrdup (cstr.data);;
-    cstr_free (&cstr);
-    
-    return line;
-
-}
 
 struct section *machine_dependent_simplified_expression_read_into (char *start, char **pp, struct expr *expr);
 

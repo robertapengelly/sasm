@@ -6,7 +6,7 @@ CC=gccwin
 LD=ldwin
 
 COPTS=-S -O2 -fno-common -ansi -I. -I./include -I../pdos/pdpclib -I../pdos/src -D__WIN32__ -D__NOBIVA__ -D__PDOS__ -Wall -Werror -ansi -m32 -pedantic
-COBJ=as.o bin.o cstr.o elks.o eval.o expr.o fixup.o frag.o hashtab.o intel.o kwd.o lex.o lib.o list.o listing.o ll.o macro.o process.o report.o section.o symbol.o vector.o
+COBJ=as.o bin.o cstr.o elks.o expr.o fixup.o frag.o hashtab.o intel.o kwd.o lex.o lib.o list.o listing.o ll.o macro.o process.o report.o section.o symbol.o vector.o
 
 all: clean sasm.exe
 

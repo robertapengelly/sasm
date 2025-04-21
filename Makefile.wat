@@ -4,7 +4,7 @@
 SRCDIR              ?=  $(CURDIR)
 VPATH               :=  $(SRCDIR)
 
-SRC                 :=   as.c bin.c cstr.c elks.c eval.c expr.c fixup.c frag.c hashtab.c intel.c kwd.c lex.c lib.c list.c listing.c ll.c macro.c process.c report.c section.c symbol.c vector.c
+SRC                 :=   as.c bin.c cstr.c elks.c expr.c fixup.c frag.c hashtab.c intel.c kwd.c lex.c lib.c list.c listing.c ll.c macro.c process.c report.c section.c symbol.c vector.c
 
 all: sasm.exe
 
