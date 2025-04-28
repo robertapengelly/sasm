@@ -897,6 +897,8 @@ struct instruction {
     
     struct reg_entry *regs[MAX_OPERANDS];
     struct reg_entry *segments[MAX_OPERANDS];
+    
+    int far_call, near_call;
 
 };
 
@@ -2095,10 +2097,36 @@ static int intel_parse_operand (char *start, char *operand_string) {
         
         switch (intel_state.operand_modifier) {
         
+            case EXPR_TYPE_FAR_PTR:
+            
+                suffix = INTEL_SUFFIX;
+                
+                if (bits != 32 && (current_templates->start->opcode_modifier & CALL) && state->model < 7) {
+                    instruction.far_call = 1;
+                }
+                
+                break;
+            
+            case EXPR_TYPE_NEAR_PTR:
+            
+                suffix = INTEL_SUFFIX;
+                
+                if (bits != 32 && (current_templates->start->opcode_modifier & CALL) && state->model < 7) {
+                    instruction.near_call = 1;
+                }
+                
+                break;
+            
             case EXPR_TYPE_BYTE_PTR:
             
-                suffix = BYTE_SUFFIX;
-                break;
+                if (strcmp (current_templates->name, "call")) {
+                
+                    suffix = BYTE_SUFFIX;
+                    break;
+                
+                }
+                
+                /* fall through */
             
             case EXPR_TYPE_WORD_PTR:
             
@@ -2109,6 +2137,8 @@ static int intel_parse_operand (char *start, char *operand_string) {
             
                 if (bits != 32 && ((current_templates->start->opcode_modifier & JUMP) || (current_templates->start->opcode_modifier & CALL))) {
                     suffix = INTEL_SUFFIX;
+                } else if (strcmp (current_templates->name, "lds") == 0 || strcmp (current_templates->name, "les") == 0 || strcmp (current_templates->name, "lfs") == 0 || strcmp (current_templates->name, "lgs") == 0 || strcmp (current_templates->name, "lss") == 0) {
+                    suffix = WORD_SUFFIX;
                 } else {
                     suffix = DWORD_SUFFIX;
                 }
@@ -2132,11 +2162,6 @@ static int intel_parse_operand (char *start, char *operand_string) {
             case EXPR_TYPE_QWORD_PTR:
             
                 suffix = QWORD_SUFFIX;
-                break;
-            
-            case EXPR_TYPE_FAR_PTR:
-            
-                suffix = INTEL_SUFFIX;
                 break;
             
             default:
@@ -2839,10 +2864,10 @@ static const struct intel_type intel_types[] = {
     INTEL_TYPE (DWORD, 4),
     INTEL_TYPE (FWORD, 6),
     
-    {   "near",     EXPR_TYPE_NEAR_PTR, { 0xFF02, 0xFF04 }  },
-    {   "far",      EXPR_TYPE_FAR_PTR,  { 0xFF05, 0xFF06 }  },
+    {   "near",     EXPR_TYPE_NEAR_PTR,     { 0xFF02, 0xFF04 }  },
+    {   "far",      EXPR_TYPE_FAR_PTR,      { 0xFF05, 0xFF06 }  },
     
-    {   0,          EXPR_TYPE_INVALID,  { 0, 0 }            }
+    {   0,          EXPR_TYPE_INVALID,      { 0, 0 }            }
 
 };
 
@@ -3194,11 +3219,11 @@ static int match_template (void) {
     
     if (state->model < 7) {
     
-        if (template->base_opcode == 0xC3 && xstrcasecmp (template->name, "retn") && instruction.operands == 0 && state->model >= 4/* && state->procs.length > 0*/) {
+        if (template->base_opcode == 0xC3 && xstrcasecmp (template->name, "retn") && instruction.operands == 0 && state->model >= 4 && state->procs.length > 0) {
             instruction.template.base_opcode = 0xCB;
         }
         
-        if (template->base_opcode == 0xC2 && instruction.operands == 1 && state->model >= 4/* && state->procs.length > 0*/) {
+        if (template->base_opcode == 0xC2 && instruction.operands == 1 && state->model >= 4 && state->procs.length > 0) {
             instruction.template.base_opcode = 0xCA;
         }
     
@@ -3977,11 +4002,11 @@ static void output_call_or_jumpbyte (void) {
         report_at (get_filename (), get_line_number (), REPORT_WARNING, "skipping prefixes on this instruction");
     }
     
-    if (state->model < 7/* && state->procs.length > 0*/) {
+    if (state->model < 7) {
     
-        if (instruction.template.base_opcode == 0xE8 && size == 2 && state->model >= 4) {
+        if (instruction.template.base_opcode == 0xE8 && size == 2 && !instruction.near_call && (instruction.far_call || (state->model >= 4 && state->procs.length > 0))) {
         
-            instruction.template.base_opcode = 0x9A;
+            instruction.template.base_opcode = (instruction.far_call ? 0xFF : 0x9A);
             size += 2;
         
         }
@@ -3990,7 +4015,7 @@ static void output_call_or_jumpbyte (void) {
     
     frag_append_1_char (instruction.template.base_opcode);
     
-    if (instruction.template.opcode_modifier & JUMPBYTE || state->model < 4) {
+    if (instruction.near_call || (!instruction.far_call && (instruction.template.opcode_modifier & JUMPBYTE || state->model < 4))) {
     
         if (instruction.disps[0]->type == EXPR_TYPE_CONSTANT) {
         
@@ -4008,7 +4033,7 @@ static void output_call_or_jumpbyte (void) {
         fixup = fixup_new_expr (current_frag, current_frag->fixed_size, size, instruction.disps[0], 1, RELOC_TYPE_DEFAULT);
         frag_increase_fixed_size (size);
     
-    } else if (/*state->procs.length == 0 || */size == 2 || state->model == 7) {
+    } else if ((!instruction.far_call && size == 2) || state->model == 7) {
     
         if (instruction.disps[0]->type == EXPR_TYPE_CONSTANT) {
         
