@@ -15,26 +15,6 @@
 
 static struct hashtab hashtab_macros = { 0 };
 
-void remove_all_macros (void) {
-
-    struct macro *m;
-    int i;
-    
-    for (i = 0; i < hashtab_macros.capacity; i++) {
-    
-        if (!(m = (struct macro *) &hashtab_macros.entries[i])) {
-            continue;
-        }
-        
-        free (m->name);
-        free (m->value);
-    
-    }
-    
-    memset (&hashtab_macros, 0, sizeof (hashtab_macros));
-
-}
-
 struct hashtab_name *find_macro (char *sname) {
 
     struct hashtab_name *key;
@@ -305,17 +285,11 @@ void remove_macro (char *start, char **pp, int report_line) {
     
     if (!(sname = symname (pp))) {
     
-        if (!(sname = symname (pp))) {
-    
         if (report_line) {
             report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "macro names must be identifiers");
         } else {
             report_at (get_filename (), get_line_number (), REPORT_ERROR, "macro names must be identifiers");
         }
-        
-        return;
-    
-    }
         
         return;
     
@@ -548,8 +522,4 @@ char *process_macro (char *start, char **pp, struct macro *m) {
     
     return m->value;
 
-}
-
-void push_macro (struct hashtab_name *key, struct macro *m) {
-    hashtab_put (&hashtab_macros, key, m);
 }

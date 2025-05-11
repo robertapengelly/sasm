@@ -117,6 +117,8 @@ int operand_type_check (struct operand_type a, enum operand_type_group g) {
             exit (EXIT_FAILURE);
     
     }
+    
+    return 0;
 
 }
 
@@ -215,6 +217,7 @@ struct relax_table_entry relax_table[] = {
 
 static struct hashtab hashtab_templates = { 0 };
 static struct hashtab hashtab_regs = { 0 };
+static struct hashtab hashtab_models = { 0 };
 
 #define     DEFAULT_CPU_ARCH_NAME       "ALL"
 
@@ -1376,6 +1379,26 @@ static struct reg_entry reg_table[] = {
 
 };
 
+struct model_entry {
+
+    const char *name;
+    unsigned int data_size, model;
+
+};
+
+static struct model_entry model_table[] = {
+
+    {   "tiny",         0,      1   },
+    {   "small",        0,      2   },
+    {   "compact",      1,      3   },
+    {   "medium",       0,      4   },
+    {   "large",        1,      5   },
+    {   "huge",         2,      6   },
+    
+    {   0,              0,      0   }
+
+};
+
 #define     BYTE_SUFFIX                 'b'
 #define     WORD_SUFFIX                 'w'
 #define     SHORT_SUFFIX                's'
@@ -1468,6 +1491,31 @@ struct reg_entry *machine_dependent_find_reg_entry (char *name) {
     if ((key = hashtab_get_key (&hashtab_regs, lname))) {
     
         if ((entry = hashtab_get (&hashtab_regs, key))) {
+        
+            free (lname);
+            return entry;
+        
+        }
+    
+    }
+    
+    free (lname);
+    return 0;
+
+}
+
+static struct model_entry *find_model_entry (char *name) {
+
+    char *lname;
+    
+    struct hashtab_name *key;
+    struct model_entry *entry;
+    
+    lname = to_lower (name);
+    
+    if ((key = hashtab_get_key (&hashtab_models, lname))) {
+    
+        if ((entry = hashtab_get (&hashtab_models, key))) {
         
             free (lname);
             return entry;
@@ -1774,16 +1822,6 @@ static void machine_dependent_set_bits (int new_bits, int cause_fatal_error) {
 }
 
 
-static void handler_amd64 (char *start, char **pp) {
-
-    (void) start;
-    (void) pp;
-    
-    machine_dependent_set_march ("generic64");
-    machine_dependent_set_bits (64, 0);
-
-}
-
 static void handler_8086 (char *start, char **pp) {
 
     (void) start;
@@ -1956,6 +1994,8 @@ static void handler_extern (char *start, char **pp) {
 static void handler_model (char *start, char **pp) {
 
     char *caret = (*pp = skip_whitespace (*pp));
+    
+    struct model_entry *model_entry;
     char *model, *lang;
     
     if (!(model = symname (pp))) {
@@ -1969,35 +2009,10 @@ static void handler_model (char *start, char **pp) {
     
     *pp = skip_whitespace (*pp);
     
-    if (xstrcasecmp (model, "tiny") == 0) {
+    if ((model_entry = find_model_entry (model))) {
     
-        state->data_size = 0;
-        state->model = 1;
-    
-    } else if (xstrcasecmp (model, "small") == 0) {
-    
-        state->data_size = 0;
-        state->model = 2;
-    
-    } else if (xstrcasecmp (model, "compact") == 0) {
-    
-        state->data_size = 1;
-        state->model = 3;
-    
-    } else if (xstrcasecmp (model, "medium") == 0) {
-    
-        state->data_size = 0;
-        state->model = 4;
-    
-    } else if (xstrcasecmp (model, "large") == 0) {
-    
-        state->data_size = 1;
-        state->model = 5;
-    
-    } else if (xstrcasecmp (model, "huge") == 0) {
-    
-        state->data_size = 2;
-        state->model = 6;
+        state->data_size = model_entry->data_size;
+        state->model = model_entry->model;
     
     } else if (xstrcasecmp (model, "flat") == 0) {
     
@@ -2137,8 +2152,6 @@ static void handler_option (char *start, char **pp) {
 
 static struct pseudo_op_entry pseudo_op_table[] = {
 
-    {   ".amd64",       &handler_amd64      },
-    
     {   ".8086",        &handler_8086       },
     {   ".8087",        &handler_8087       },
     
@@ -2178,6 +2191,8 @@ void machine_dependent_init (void) {
     struct templates *templates;
     
     struct template *template = template_table;
+    struct model_entry *model_entry;
+    
     int ch;
     
     templates = xmalloc (sizeof (*templates));
@@ -2268,6 +2283,26 @@ void machine_dependent_init (void) {
     
     }
     
+    for (model_entry = model_table; model_entry->name; model_entry++) {
+    
+        if (hashtab_get_key (&hashtab_models, model_entry->name)) {
+        
+            report_at (program_name, 0, REPORT_ERROR, "duplicate entry '%s'", reg_entry->name);
+            continue;
+        
+        }
+        
+        if (!(key = hashtab_alloc_name (model_entry->name))) {
+        
+            report_at (program_name, 0, REPORT_ERROR, "failed to allocate memory for '%s'", reg_entry->name);
+            continue;
+        
+        }
+        
+        hashtab_put (&hashtab_models, key, model_entry);
+    
+    }
+    
     for (ch = 0; ch < 255; ch++) {
     
         if (islower (ch) || isdigit (ch)) {
@@ -2280,8 +2315,22 @@ void machine_dependent_init (void) {
     
     expr_type_set_rank (EXPR_TYPE_FULL_PTR, intel_syntax ? 10 : 0);
     
-    machine_dependent_set_march ("i8086");
-    machine_dependent_set_bits (16, 1);
+    if (state->format == AS_OUTPUT_WIN64) {
+    
+        machine_dependent_set_march ("generic64");
+        machine_dependent_set_bits (64, 1);
+    
+    } else if (state->format == AS_OUTPUT_I386_ELKS || state->format == AS_OUTPUT_WIN32) {
+    
+        machine_dependent_set_march ("i386");
+        machine_dependent_set_bits (32, 1);
+    
+    } else {
+    
+        machine_dependent_set_march ("i8086");
+        machine_dependent_set_bits (16, 1);
+    
+    }
     
     install_pseudo_op_table (pseudo_op_table);
 
@@ -2522,7 +2571,13 @@ static int add_prefix (unsigned char prefix) {
     int ret = 1;
     
     if (bits == 64 && prefix >= REX_PREFIX_OPCODE && prefix < REX_PREFIX_OPCODE + 16) {
+    
         prefix_type = REX_PREFIX;
+        
+        if (instruction.prefixes[prefix_type] & prefix & ~REX_PREFIX_OPCODE) {
+            ret = 0;
+        }
+    
     } else {
     
         switch (prefix) {
@@ -3804,6 +3859,7 @@ static const struct intel_type intel_types[] = {
     INTEL_TYPE (WORD, 2),
     INTEL_TYPE (DWORD, 4),
     INTEL_TYPE (FWORD, 6),
+    INTEL_TYPE (QWORD, 8),
     
     {   "near",     EXPR_TYPE_NEAR_PTR,     { 0xFF02, 0xFF04 }  },
     {   "far",      EXPR_TYPE_FAR_PTR,      { 0xFF05, 0xFF06 }  },
@@ -4385,7 +4441,7 @@ static int match_template (char mnemonic_suffix) {
             
             case x86_error_invalid_instruction_suffix:
             
-                report_at (get_filename (), get_line_number (), REPORT_ERROR, "invalid instruction suffix for %s", current_templates->name);
+                report_at (get_filename (), get_line_number (), REPORT_ERROR, "invalid instruction suffix '%c' for %s", mnemonic_suffix, current_templates->name);
                 return 1;
             
             case x86_error_operand_size_mismatch:
@@ -4411,12 +4467,16 @@ static int match_template (char mnemonic_suffix) {
     
     if (state->model < 7) {
     
-        if (template->base_opcode == 0xC3 && xstrcasecmp (template->name, "retn") && instruction.operands == 0 && state->model >= 4 && state->procs.length > 0) {
-            instruction.template.base_opcode = 0xCB;
-        }
+        if (xstrcasecmp (template->name, "retn") && instruction.operands == 0 && state->model >= 4 && state->procs.length > 0) {
         
-        if (template->base_opcode == 0xC2 && xstrcasecmp (template->name, "retn") && instruction.operands == 1 && state->model >= 4 && state->procs.length > 0) {
-            instruction.template.base_opcode = 0xCA;
+            if (template->base_opcode == 0xC3) {
+                instruction.template.base_opcode = 0xCB;
+            }
+            
+            if (template->base_opcode == 0xC2) {
+                instruction.template.base_opcode = 0xCA;
+            }
+        
         }
     
     }
@@ -5479,7 +5539,24 @@ static void output_call_or_jumpbyte (void) {
     }
     
     if (fixup && size == 1) {
-        fixup->fixup_signed = 1;
+    
+        switch (size) {
+        
+            case 1:
+            
+                fixup->fixup_signed = 1;
+                break;
+            
+            case 4:
+            
+                if (bits == 64) {
+                    fixup->fixup_signed = 1;
+                }
+                
+                break;
+        
+        }
+    
     }
 
 }
@@ -5555,6 +5632,10 @@ static long convert_number_to_size (unsigned long value, int size) {
         
             mask = 0xffffffff;
             break;
+        
+        case 8:
+        
+            return value;
 
         default:
         
@@ -5590,6 +5671,24 @@ static int disp_size (struct operand_type operand_type) {
 
 }
 
+static int imm_size (struct operand_type operand_type) {
+
+    if (operand_type.imm8 || operand_type.imm8s) {
+        return 1;
+    }
+    
+    if (operand_type.imm16) {
+        return 2;
+    }
+    
+    if (operand_type.imm64) {
+        return 8;
+    }
+    
+    return 4;
+
+}
+
 static void output_disps (void) {
 
     int operand;
@@ -5607,28 +5706,37 @@ static void output_disps (void) {
             
             } else {
             
-                fixup_new_expr (current_frag, current_frag->fixed_size, size, instruction.disps[operand], 0, RELOC_TYPE_DEFAULT);
+                struct fixup *fixup;
+                int pcrel = (instruction.special_types[operand] & OPERAND_PCREL) != 0;
+                
+                if (pcrel) {
+                
+                    /* pcrel displacement is relative to the end of the instruction,
+                     * so the size of immediate operands has to be included. */
+                    int operand2;
+                    
+                    for (operand2 = 0; operand2 < instruction.operands; operand2++) {
+                    
+                        if (operand_type_check (instruction.types[operand2], imm)) {
+                            instruction.disps[operand]->add_number -= imm_size (instruction.types[operand2]);
+                        }
+                    
+                    }
+                
+                }
+                
+                fixup = fixup_new_expr (current_frag, current_frag->fixed_size, size, instruction.disps[operand], pcrel, RELOC_TYPE_DEFAULT);
                 frag_increase_fixed_size (size);
+                
+                if (bits == 64 && size == 4 && pcrel && !instruction.prefixes[ADDR_PREFIX]) {
+                    fixup->fixup_signed = 1;
+                }
             
             }
         
         }
     
     }
-
-}
-
-static int imm_size (struct operand_type operand_type) {
-
-    if (operand_type.imm8 || operand_type.imm8s) {
-        return 1;
-    }
-    
-    if (operand_type.imm16) {
-        return 2;
-    }
-    
-    return 4;
 
 }
 
@@ -5823,6 +5931,7 @@ signed long machine_dependent_estimate_size_before_relax (struct frag *frag, str
 
     if (symbol_get_section (frag->symbol) != section) {
     
+        struct fixup *fixup;
         int size = (frag->relax_subtype & RELAX_SUBTYPE_CODE16_JUMP) ? 2 : 4;
         
         unsigned char *opcode_pos = frag->buf + frag->opcode_offset_in_buf;
@@ -5834,7 +5943,7 @@ signed long machine_dependent_estimate_size_before_relax (struct frag *frag, str
             
                 *opcode_pos = 0xE9;
                 
-                fixup_new (frag, frag->fixed_size, size, frag->symbol, frag->offset, 1, RELOC_TYPE_DEFAULT);
+                fixup = fixup_new (frag, frag->fixed_size, size, frag->symbol, frag->offset, 1, RELOC_TYPE_DEFAULT);
                 frag->fixed_size += size;
                 
                 break;
@@ -5851,7 +5960,7 @@ signed long machine_dependent_estimate_size_before_relax (struct frag *frag, str
                     opcode_pos[2] = 0xE9;
                     
                     frag->fixed_size += 4;
-                    fixup_new (frag, old_frag_fixed_size + 2, size, frag->symbol, frag->offset, 1, RELOC_TYPE_DEFAULT);
+                    fixup = fixup_new (frag, old_frag_fixed_size + 2, size, frag->symbol, frag->offset, 1, RELOC_TYPE_DEFAULT);
                     
                     break;
                 
@@ -5864,7 +5973,7 @@ signed long machine_dependent_estimate_size_before_relax (struct frag *frag, str
                 opcode_pos[1] = opcode_pos[0] + 0x10;
                 opcode_pos[0] = TWOBYTE_OPCODE;
                 
-                fixup_new (frag, frag->fixed_size + 1, size, frag->symbol, frag->offset, 1, RELOC_TYPE_DEFAULT);
+                fixup = fixup_new (frag, frag->fixed_size + 1, size, frag->symbol, frag->offset, 1, RELOC_TYPE_DEFAULT);
                 frag->fixed_size += size + 1;
                 
                 break;
@@ -5873,7 +5982,7 @@ signed long machine_dependent_estimate_size_before_relax (struct frag *frag, str
             
                 size = 1;
                 
-                fixup_new (frag, frag->fixed_size, size, frag->symbol, frag->offset, 1, RELOC_TYPE_DEFAULT);
+                fixup = fixup_new (frag, frag->fixed_size, size, frag->symbol, frag->offset, 1, RELOC_TYPE_DEFAULT);
                 frag->fixed_size += size;
                 
                 break;
@@ -5884,6 +5993,14 @@ signed long machine_dependent_estimate_size_before_relax (struct frag *frag, str
                     "%s: %lu: machine_dependent_estimate_size_before_relax invalid case", frag->filename, frag->line_number);
                 exit (EXIT_FAILURE);
         
+        }
+        
+        /**
+         * Jumps here are signed but wrapping around is allowed,
+         * only wrapping around at 4 GiB is not allowed in 64-bit mode.
+         */
+        if (size == 4 && bits == 64) {
+            fixup->fixup_signed = 1;
         }
         
         frag->relax_type = RELAX_TYPE_NONE_NEEDED;
@@ -6090,7 +6207,7 @@ void machine_dependent_finish_frag (struct frag *frag) {
 
 void machine_dependent_assemble_line (char *start, char *line) {
 
-    char mnemonic_suffix;
+    char mnemonic_suffix = 0;
     
     memset (&instruction, 0, sizeof (instruction));
     memset (operand_exprs, 0, sizeof (operand_exprs));
@@ -6102,6 +6219,10 @@ void machine_dependent_assemble_line (char *start, char *line) {
     }
     
     mnemonic_suffix = instruction.suffix;
+    
+    if (mnemonic_suffix != INTEL_SUFFIX) {
+        mnemonic_suffix = 0;
+    }
     
     /**
      * All Intel instructions have reversed operands except "bound" and some other.

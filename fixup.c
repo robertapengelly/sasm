@@ -237,21 +237,6 @@ static void relax_section (struct section *section) {
                         
                         }
                     
-                    } else if (state->format == AS_OUTPUT_BIN) {
-                    
-                        if (frag->offset == root_frag->offset) {
-                        
-                            frag->relax_type = RELAX_TYPE_NONE_NEEDED;
-                            growth = 0;
-                            
-                            frag->next->address += target;
-                            break;
-                        
-                        }
-                        
-                        frag->relax_type = RELAX_TYPE_NONE_NEEDED;
-                        report_at (frag->filename, frag->line_number, REPORT_ERROR, "program origin redefined");
-                    
                     }
                     
                     growth = target - (frag->next->address + change);
@@ -580,7 +565,7 @@ void fixup_code (void) {
         finish_frags_after_relaxation (section);
     }
     
-    {
+    if (state->format == AS_OUTPUT_I386_ELKS || state->format == AS_OUTPUT_IA16_ELKS) {
     
         unsigned long address, text_section_size;
         struct frag *frag;

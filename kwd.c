@@ -191,6 +191,8 @@ static void align_bytes (char *start, char **pp, int first_arg_is_bytes) {
 
 }
 
+void machine_dependent_number_to_chars (unsigned char *p, unsigned int number, unsigned int size);
+
 static void handle_constant (char *start, char **pp, int size) {
 
     struct expr expr, val;
@@ -306,13 +308,7 @@ static void handle_constant (char *start, char **pp, int size) {
             }
             
             if (expr.type == EXPR_TYPE_CONSTANT) {
-            
-                int i;
-                
-                for (i = 0; i < size; i++) {
-                    frag_append_1_char ((expr.add_number >> (8 * i)) & 0xff);
-                }
-            
+                machine_dependent_number_to_chars (frag_increase_fixed_size (size), expr.add_number, size);
             } else if (expr.type != EXPR_TYPE_INVALID) {
             
                 fixup_new_expr (current_frag, current_frag->fixed_size, size, &expr, 0, RELOC_TYPE_DEFAULT);

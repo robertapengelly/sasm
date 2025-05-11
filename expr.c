@@ -331,7 +331,7 @@ static enum expr_type operator (char *p, unsigned int *operator_size) {
 static struct section *operand (char *start, char **pp, struct expr *expr, int expr_mode) {
 
     struct section *ret_section;
-    char ch;
+    char *temp, ch;
     
     expr->type = EXPR_TYPE_INVALID;
     expr->add_number = 0;
@@ -343,6 +343,23 @@ static struct section *operand (char *start, char **pp, struct expr *expr, int e
     
     if (is_end_of_line[(int) **pp]) {
         goto end_of_line;
+    }
+    
+    if (**pp >= '0' && **pp <= '9') {
+    
+        temp = (*pp);
+        
+        while (*temp && (isxdigit (*temp))) {
+            temp++;
+        }
+        
+        if (*temp && *temp == 'h') {
+        
+            *temp = ' ';
+            goto is_hex;
+        
+        }
+    
     }
     
     switch (**pp) {
@@ -370,6 +387,8 @@ static struct section *operand (char *start, char **pp, struct expr *expr, int e
                 case 'x':
                 
                     (*pp)++;
+                    
+                is_hex:
                     
                     integer_constant (start, pp, expr, 16);
                     break;

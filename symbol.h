@@ -18,9 +18,11 @@ struct symbol {
     struct frag *frag;
     
     struct expr value;
-    int flags;
+    int resolved, resolving, flags;
     
-    int resolved, resolving;
+    unsigned long symbol_table_index;
+    int write_name_to_string_table;
+    
     struct symbol *next;
 
 };
@@ -56,6 +58,7 @@ int symbol_is_undefined (struct symbol *symbol);
 int symbol_uses_other_symbol (struct symbol *symbol);
 int symbol_uses_reloc_symbol (struct symbol *symbol);
 
+unsigned long symbol_get_symbol_table_index (struct symbol *symbol);
 unsigned long symbol_get_value (struct symbol *symbol);
 unsigned long symbol_resolve_value (struct symbol *symbol);
 
@@ -63,6 +66,7 @@ void symbol_add_to_chain (struct symbol *symbol);
 void symbol_set_frag (struct symbol *symbol, struct frag *frag);
 void symbol_set_external (struct symbol *symbol);
 void symbol_set_section (struct symbol *symbol, struct section *section);
+void symbol_set_symbol_table_index (struct symbol *symbol, unsigned long index);
 void symbol_set_value (struct symbol *symbol, unsigned long value);
 void symbol_set_value_expression (struct symbol *symbol, struct expr *expr);
 

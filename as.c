@@ -17,6 +17,7 @@ struct as_state *state = 0;
 const char *program_name = 0;
 
 extern void output_binary (FILE *fp);
+extern void output_coff (FILE *fp);
 extern void output_elks (FILE *fp);
 
 extern void keywords_init (void);
@@ -59,7 +60,6 @@ int main (int argc, char **argv) {
     }
     
     atexit (cleanup);
-    lex_init ();
     
     state = xmalloc (sizeof (*state));
     parse_args (argc, argv, 1);
@@ -124,50 +124,6 @@ int main (int argc, char **argv) {
         return EXIT_FAILURE;
     }
     
-    if (state->format == AS_OUTPUT_BIN) {
-    
-        int report_output = 1;
-        
-        for (symbol = symbols; symbol; symbol = symbol->next) {
-        
-            if ((symbol_is_external (symbol) && symbol_get_section (symbol) == undefined_section) || symbol_is_undefined (symbol)) {
-            
-                if (symbol->scope == SYMBOL_SCOPE_GLOBAL) {
-                
-                    report_at (program_name, 0, REPORT_ERROR, "undefined global symbol '%s'", symbol->name);
-                    continue;
-                
-                }
-                
-                if (report_output) {
-                
-                    report_at (program_name, 0, REPORT_ERROR, "%s output does not support external references", state->format == AS_OUTPUT_BIN ? "binary" : "com");
-                    report_output = 0;
-                
-                }
-                
-                report_at (program_name, 0, REPORT_ERROR, "undefined external symbol '%s'", symbol->name);
-            
-            }
-        
-        }
-        
-        if (get_error_count () > 0) {
-            return EXIT_FAILURE;
-        }
-        
-        if (!(state->ofp = fopen (state->ofile, "wb"))) {
-        
-            report_at (program_name, 0, REPORT_ERROR, "failed to open '%s' for writing", state->ofile);
-            return EXIT_FAILURE;
-        
-        }
-        
-        output_binary (state->ofp);
-        return EXIT_SUCCESS;
-    
-    }
-    
     if (!(state->ofp = fopen (state->ofile, "wb"))) {
     
         report_at (program_name, 0, REPORT_ERROR, "failed to open '%s' for writing", state->ofile);
@@ -175,7 +131,11 @@ int main (int argc, char **argv) {
     
     }
     
-    output_elks (state->ofp);
+    if (state->format == AS_OUTPUT_I386_ELKS || state->format == AS_OUTPUT_IA16_ELKS) {
+        output_elks (state->ofp);
+    } else if (state->format == AS_OUTPUT_WIN32 || state->format == AS_OUTPUT_WIN64) {
+        output_coff (state->ofp);
+    }
     
     if (get_error_count () > 0) {
         return EXIT_FAILURE;

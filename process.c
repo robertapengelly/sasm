@@ -497,14 +497,14 @@ static struct pp_pseudo_op_entry cond_pseudo_op_table[] = {
 static struct hashtab hashtab_cond_pseudo_ops = { 0 };
 static int includes = 0;
 
-static void install_cond_pseudo_op_table (struct pp_pseudo_op_entry *table) {
+static void install_pp_pseudo_op_table (struct pp_pseudo_op_entry *table, struct hashtab *hashatb_table) {
 
     struct pp_pseudo_op_entry *entry;
     struct hashtab_name *key;
     
     for (entry = table; entry->name; entry++) {
     
-        if (hashtab_get_key (&hashtab_cond_pseudo_ops, entry->name)) {
+        if (hashtab_get_key (hashatb_table, entry->name)) {
         
             report_at (program_name, 0, REPORT_ERROR, "duplicate entry '%s'", entry->name);
             continue;
@@ -518,7 +518,7 @@ static void install_cond_pseudo_op_table (struct pp_pseudo_op_entry *table) {
         
         }
         
-        hashtab_put (&hashtab_cond_pseudo_ops, key, entry);
+        hashtab_put (hashatb_table, key, entry);
     
     }
 
@@ -682,33 +682,6 @@ static struct pp_pseudo_op_entry pseudo_op_table[] = {
 
 };
 
-static void install_pp_pseudo_op_table (struct pp_pseudo_op_entry *table) {
-
-    struct pp_pseudo_op_entry *entry;
-    struct hashtab_name *key;
-    
-    for (entry = table; entry->name; entry++) {
-    
-        if (hashtab_get_key (&hashtab_pseudo_ops, entry->name)) {
-        
-            report_at (program_name, 0, REPORT_ERROR, "duplicate entry '%s'", entry->name);
-            continue;
-        
-        }
-        
-        if (!(key = hashtab_alloc_name (entry->name))) {
-        
-            report_at (program_name, 0, REPORT_ERROR, "failed to allocate memory for '%s'", entry->name);
-            continue;
-        
-        }
-        
-        hashtab_put (&hashtab_pseudo_ops, key, entry);
-    
-    }
-
-}
-
 struct pp_pseudo_op_entry *find_directive (char *name) {
 
     struct hashtab_name *key;
@@ -727,29 +700,6 @@ struct pp_pseudo_op_entry *find_directive (char *name) {
 }
 
 
-static void init_builtin_macros (void) {
-
-    char *name;
-    
-    struct hashtab_name *key;
-    struct macro *m;
-    
-    name = xstrdup ("__SASM__");
-    
-    if ((key = hashtab_alloc_name (name))) {
-    
-        m = xmalloc (sizeof (*m));
-        m->type = MACRO_BUILTIN;
-        
-        m->name = name;
-        m->value = "1";
-        
-        push_macro (key, m);
-    
-    }
-
-}
-
 int preprocess_init (void) {
 
     struct list *item;
@@ -757,14 +707,6 @@ int preprocess_init (void) {
     
     set_filename (xstrdup ("<command-line>"));
     set_line_number (1);
-    
-    remove_all_macros ();
-    
-    while ((opt = vec_pop (&vec_include_paths))) {
-        free (opt);
-    }
-    
-    init_builtin_macros ();
     
     if (state->pplist) {
     
@@ -789,29 +731,25 @@ int preprocess_init (void) {
             
                 case 'D':
                 
-                    opt = nopt = xstrdup (opt + 2);
+                    nopt = opt + 2;
                     
                     if ((p = strrchr (nopt, '='))) {
                         *p++ = ' ';
                     }
                     
                     add_macro (nopt, &nopt, 0);
-                    free (opt);
-                    
                     break;
                 
                 case 'I':
                 
-                    vec_push (&vec_include_paths, xstrdup (opt + 2));
+                    vec_push (&vec_include_paths, opt + 2);
                     break;
                 
                 case 'U':
                 
-                    opt = nopt = xstrdup (opt + 2);
+                    nopt = opt + 2;
                     
                     remove_macro (nopt, &nopt, 0);
-                    free (opt);
-                    
                     break;
                 
                 default:
@@ -825,8 +763,8 @@ int preprocess_init (void) {
     
     }
     
-    install_cond_pseudo_op_table (cond_pseudo_op_table);
-    install_pp_pseudo_op_table (pseudo_op_table);
+    install_pp_pseudo_op_table (cond_pseudo_op_table, &hashtab_cond_pseudo_ops);
+    install_pp_pseudo_op_table (pseudo_op_table, &hashtab_pseudo_ops);
     
     return get_error_count () > 0;
 

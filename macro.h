@@ -20,15 +20,13 @@ struct macro {
 };
 
 #include    "hashtab.h"
+
 struct hashtab_name *find_macro (char *sname);
 struct macro *get_macro (struct hashtab_name *key);
-
-void remove_all_macros (void);
 
 void add_macro (char *start, char **pp, int report_line);
 void remove_macro (char *start, char **pp, int report_line);
 
 char *process_macro (char *start, char **pp, struct macro *m);
-void push_macro (struct hashtab_name *key, struct macro *m);
 
 #endif      /* _MACRO_H */

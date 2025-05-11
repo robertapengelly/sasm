@@ -8,7 +8,7 @@ LD=pdld
 COPTS=-S -O2 -fno-common -ansi -I. -I./include -I../pdos/pdpclib \
   -I../pdos/src -D__WIN32__ -D__NOBIVA__ -D__PDOS__ -Wall \
   -Werror -ansi -m32 -pedantic
-COBJ=as.obj bin.obj cstr.obj elks.obj expr.obj fixup.obj frag.obj hashtab.obj \
+COBJ=as.obj coff.obj cstr.obj elks.obj expr.obj fixup.obj frag.obj hashtab.obj \
   intel.obj kwd.obj lex.obj lib.obj list.obj listing.obj ll.obj macro.obj \
   process.obj report.obj section.obj symbol.obj vector.obj
 

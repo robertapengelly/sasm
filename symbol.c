@@ -370,6 +370,10 @@ int symbol_uses_reloc_symbol (struct symbol *symbol) {
     return (symbol->value.type == EXPR_TYPE_SYMBOL && ((symbol_is_resolved (symbol) && symbol->value.op_symbol) || symbol_is_undefined (symbol)));
 }
 
+unsigned long symbol_get_symbol_table_index (struct symbol *symbol) {
+    return symbol->symbol_table_index;
+}
+
 unsigned long symbol_get_value (struct symbol *symbol) {
     return symbol_resolve_value (symbol);
 }
@@ -774,6 +778,10 @@ void symbol_set_external (struct symbol *symbol) {
 
 void symbol_set_section (struct symbol *symbol, struct section *section) {
     symbol->section = section;
+}
+
+void symbol_set_symbol_table_index (struct symbol *symbol, unsigned long index) {
+    symbol->symbol_table_index = index;
 }
 
 void symbol_set_value (struct symbol *symbol, unsigned long value) {

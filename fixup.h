@@ -8,6 +8,7 @@
 
 #define     RELOC_TYPE_DEFAULT          0
 #define     RELOC_TYPE_FAR_CALL         1
+#define     RELOC_TYPE_RVA              2
 
 struct fixup {
 

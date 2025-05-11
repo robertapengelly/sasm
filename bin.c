@@ -23,28 +23,10 @@ void output_binary (FILE *fp) {
     struct frag *frag;
     
     section_set (text_section);
-    
-    for (frag = current_frag_chain->first_frag; frag; frag = frag->next) {
-    
-        if (frag->fixed_size == 0) {
-            continue;
-        }
-        
-        text_size += frag->fixed_size;
-    
-    }
+    text_size = section_write_frag_chain (fp);
     
     section_set (data_section);
-    
-    for (frag = current_frag_chain->first_frag; frag; frag = frag->next) {
-    
-        if (frag->fixed_size == 0) {
-            continue;
-        }
-        
-        data_size += frag->fixed_size;
-    
-    }
+    data_size = section_write_frag_chain (fp);
     
     section_set (bss_section);
     

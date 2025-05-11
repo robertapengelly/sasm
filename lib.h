@@ -18,7 +18,9 @@ int xstrcasecmp (const char *__s1, const char *__s2);
 int xstrncasecmp (const char *__s1, const char *__s2, unsigned long __len);
 
 char *to_lower (const char *__p);
+
 void ignore_rest_of_line (char **pp);
+void write_to_byte_array (unsigned char *arr, unsigned long value, int size);
 
 
 void add_include_path (const char *__p);

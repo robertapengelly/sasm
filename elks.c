@@ -14,16 +14,6 @@
 #include    "section.h"
 #include    "symbol.h"
 
-static void write_to_byte_array (unsigned char *arr, unsigned long value, int size) {
-
-    int i;
-    
-    for (i = 0; i < size; i++) {
-        arr[i] = (value >> (8 * i)) & 0xff;
-    }
-
-}
-
 static int output_relocation (struct fixup *fixup, unsigned long start_address_of_section, FILE *fp) {
 
     struct elks_relocation_info reloc;
@@ -126,46 +116,12 @@ void output_elks (FILE *fp) {
     }
     
     section_set (text_section);
-    text_size = 0;
-    
-    for (frag = current_frag_chain->first_frag; frag; frag = frag->next) {
-    
-        if (frag->fixed_size == 0) {
-            continue;
-        }
-        
-        if (fwrite (frag->buf, frag->fixed_size, 1, fp) != 1) {
-        
-            report_at (program_name, 0, REPORT_ERROR, "failed whilst writing text");
-            return;
-        
-        }
-        
-        text_size += frag->fixed_size;
-    
-    }
+    text_size = section_write_frag_chain (fp);
     
     write_to_byte_array (header.a_text, text_size, 4);
     
     section_set (data_section);
-    data_size = 0;
-    
-    for (frag = current_frag_chain->first_frag; frag; frag = frag->next) {
-    
-        if (frag->fixed_size == 0) {
-            continue;
-        }
-        
-        if (fwrite (frag->buf, frag->fixed_size, 1, fp) != 1) {
-        
-            report_at (program_name, 0, REPORT_ERROR, "failed whilst writing data");
-            return;
-        
-        }
-        
-        data_size += frag->fixed_size;
-    
-    }
+    data_size = section_write_frag_chain (fp);
     
     write_to_byte_array (header.a_data, data_size, 4);
     

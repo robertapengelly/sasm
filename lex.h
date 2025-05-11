@@ -13,6 +13,4 @@ extern char lex_table[];
 #define     is_name_beginner(c)         (lex_table[(c)] & LEX_NAME_START)
 #define     is_name_part(c)             (lex_table[(c)] & LEX_NAME_PART)
 
-void lex_init (void);
-
 #endif      /* _LEX_H */
