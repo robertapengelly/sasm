@@ -4303,9 +4303,12 @@ static int match_template (char mnemonic_suffix) {
             suffix_check.no_qsuf = 1;
             break;
         
-        case INTEL_SUFFIX:
+        default:
         
-            suffix_check.no_intelsuf = 1;
+            if (instruction.suffix == INTEL_SUFFIX) {
+                suffix_check.no_intelsuf = 1;
+            }
+            
             break;
     
     }
@@ -6214,14 +6217,14 @@ void machine_dependent_assemble_line (char *start, char *line) {
     
     operand_exprs_count = 0;
     
-    if (!(line = parse_instruction (line)) || parse_operands (start, &line)) {
+    if (!(line = parse_instruction (line))) {
         return;
     }
     
     mnemonic_suffix = instruction.suffix;
     
-    if (mnemonic_suffix != INTEL_SUFFIX) {
-        mnemonic_suffix = 0;
+    if (parse_operands (start, &line)) {
+        return;
     }
     
     /**

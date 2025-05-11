@@ -86,7 +86,7 @@ static void _print_usage (void) {
         fprintf (stderr, "\n");
         fprintf (stderr, "    -f FORMAT             Specify the format of object file (default elks-ia16)\n");
         fprintf (stderr, "                              Supported formats are:\n");
-        fprintf (stderr, "                                  elks-ia16, elks-i386, binary,\n");
+        fprintf (stderr, "                                  elks-ia16, elks-i386,\n");
         fprintf (stderr, "                                  win32, win64\n");
         fprintf (stderr, "    -l FILE               Print listings to file FILE.\n");
         fprintf (stderr, "    -o OBJFILE            Name the object-file output OBJFILE (default a.out).\n");
