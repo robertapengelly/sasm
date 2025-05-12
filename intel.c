@@ -3960,7 +3960,13 @@ static int fits_in_unsigned_word (unsigned long number) {
 }
 
 static int fits_in_signed_long (signed long number) {
+
+#if     defined (__WATCOMC__)
+    return 1;
+#else
     return ((number >= -2147483647-1) && (number <= 2147483647));
+#endif
+
 }
 
 static int fits_in_unsigned_long (unsigned long number) {
