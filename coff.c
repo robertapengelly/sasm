@@ -13,7 +13,6 @@
 #include    "lib.h"
 #include    "report.h"
 #include    "section.h"
-#include    "stdint.h"
 #include    "symbol.h"
 
 static int output_relocation (FILE *outfile, struct fixup *fixup) {
@@ -135,7 +134,7 @@ static int output_relocation (FILE *outfile, struct fixup *fixup) {
 
 }
 
-#define     GET_UINT16(arr)             ((uint32_t) arr[0] | (((uint32_t) arr[1]) << 8))
+#define     GET_UINT16(arr)             ((unsigned long) arr[0] | (((unsigned long) arr[1]) << 8))
 
 static unsigned long translate_section_flags_to_Characteristics (unsigned int flags) {
 
@@ -195,7 +194,7 @@ void output_coff (FILE *outfile) {
     unsigned char temp[4];
     
     unsigned long string_table_size = 4;
-    uint32_t NumberOfSymbols = 0;
+    unsigned long NumberOfSymbols = 0;
     
     sections_number (1);
     memset (&header, 0, sizeof (header));
@@ -226,7 +225,7 @@ void output_coff (FILE *outfile) {
     
     for (section = sections; section; section = section_get_next_section (section)) {
     
-        uint32_t SizeOfRawData = 0, PointerToRawData = 0;
+        unsigned long SizeOfRawData = 0, PointerToRawData = 0;
         
         struct section_table_entry *section_header = xmalloc (sizeof (*section_header));
         section_set_object_format_dependent_data (section, section_header);
@@ -389,7 +388,7 @@ void output_coff (FILE *outfile) {
         struct section_table_entry *section_header = section_get_object_format_dependent_data (section);
         struct fixup *fixup;
         
-        uint32_t NumberOfRelocations = 0, PointerToRelocations = ftell (outfile);
+        unsigned long NumberOfRelocations = 0, PointerToRelocations = ftell (outfile);
         section_set (section);
         
         for (fixup = current_frag_chain->first_fixup; fixup; fixup = fixup->next) {
