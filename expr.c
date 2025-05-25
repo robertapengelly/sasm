@@ -349,7 +349,7 @@ static struct section *operand (char *start, char **pp, struct expr *expr, int e
     
         temp = (*pp);
         
-        while (*temp && (isxdigit (*temp))) {
+        while (*temp && isxdigit (*temp)) {
             temp++;
         }
         
@@ -393,6 +393,7 @@ static struct section *operand (char *start, char **pp, struct expr *expr, int e
                     integer_constant (start, pp, expr, 16);
                     break;
                 
+                case '0':
                 case '1':
                 case '2':
                 case '3':
