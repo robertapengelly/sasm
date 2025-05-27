@@ -1021,7 +1021,11 @@ static void process_line (char *line, char *line_end) {
             
             if ((poe = find_poe (arg))) {
             
+#ifdef __CC64__
+                (*poe->handler) (start, &line);
+#else
                 poe->handler (start, &line);
+#endif
                 goto check;
             
             }
@@ -1090,8 +1094,12 @@ static void process_line (char *line, char *line_end) {
                         
                         symbol = symbol_label (start, caret, arg);
                         symbol->scope = SYMBOL_SCOPE_LOCAL;
-                        
+
+#ifdef __CC64__
+                        (*poe->handler) (start, &line);
+#else
                         poe->handler (start, &line);
+#endif
                         goto check;
                     
                     }
@@ -1244,8 +1252,12 @@ void process_file (const char *ifile) {
                 line = skip_whitespace (line);
                 
                 if ((poe = find_cond_directive (arg))) {
-                
+
+#ifdef __CC64__
+                    (*poe->handler) (start, &line);
+#else
                     poe->handler (start, &line);
+#endif
                     free (arg);
                     
                     continue;
@@ -1255,8 +1267,12 @@ void process_file (const char *ifile) {
                 if (!ignore_line) {
                 
                     if ((poe = find_directive (arg))) {
-                    
+
+#ifdef __CC64__
+                        (*poe->handler) (start, &line);
+#else
                         poe->handler (start, &line);
+#endif
                         free (arg);
                         
                         continue;
@@ -1287,8 +1303,12 @@ void process_file (const char *ifile) {
                 line = skip_whitespace (line);
                 
                 if ((poe = find_cond_directive (arg))) {
-                
+
+#ifdef __CC64__
+                    (*poe->handler) (start, &line);
+#else
                     poe->handler (start, &line);
+#endif
                     free (arg);
                     
                     continue;
