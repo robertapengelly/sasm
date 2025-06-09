@@ -105,10 +105,10 @@ struct symbol_table_entry {
 
 };
 
-#define     IMAGE_SYM_UNDEFINED                             0
 #define     IMAGE_SYM_ABSOLUTE                              -1
 #define     IMAGE_SYM_DEBUG                                 -2
 
+#define     IMAGE_SYM_UNDEFINED                             0
 #define     IMAGE_SYM_TYPE_NULL                             0
 #define     IMAGE_SYM_DTYPE_NULL                            0
 

@@ -1833,6 +1833,7 @@ static void handler_8086 (char *start, char **pp) {
     (void) pp;
     
     machine_dependent_set_march ("i8086");
+    machine_dependent_set_bits (16, 0);
 
 }
 
@@ -1842,6 +1843,7 @@ static void handler_8087 (char *start, char **pp) {
     (void) pp;
     
     machine_dependent_set_march ("i8086+8087");
+    machine_dependent_set_bits (16, 0);
 
 }
 
@@ -1851,6 +1853,7 @@ static void handler_186 (char *start, char **pp) {
     (void) pp;
     
     machine_dependent_set_march ("i186");
+    machine_dependent_set_bits (16, 0);
 
 }
 
@@ -1860,6 +1863,7 @@ static void handler_286 (char *start, char **pp) {
     (void) pp;
     
     machine_dependent_set_march ("i286");
+    machine_dependent_set_bits (16, 0);
 
 }
 
@@ -1869,6 +1873,7 @@ static void handler_287 (char *start, char **pp) {
     (void) pp;
     
     machine_dependent_set_march ("i286+287");
+    machine_dependent_set_bits (16, 0);
 
 }
 
@@ -1878,6 +1883,7 @@ static void handler_386 (char *start, char **pp) {
     (void) pp;
     
     machine_dependent_set_march ("i386");
+    machine_dependent_set_bits (32, 0);
 
 }
 
@@ -1887,6 +1893,7 @@ static void handler_387 (char *start, char **pp) {
     (void) pp;
     
     machine_dependent_set_march ("i386+387");
+    machine_dependent_set_bits (32, 0);
 
 }
 
@@ -1896,6 +1903,7 @@ static void handler_486 (char *start, char **pp) {
     (void) pp;
     
     machine_dependent_set_march ("i486");
+    machine_dependent_set_bits (32, 0);
 
 }
 
@@ -1905,6 +1913,7 @@ static void handler_586 (char *start, char **pp) {
     (void) pp;
     
     machine_dependent_set_march ("i586");
+    machine_dependent_set_bits (32, 0);
 
 }
 
@@ -1914,6 +1923,7 @@ static void handler_686 (char *start, char **pp) {
     (void) pp;
     
     machine_dependent_set_march ("i686");
+    machine_dependent_set_bits (32, 0);
 
 }
 
