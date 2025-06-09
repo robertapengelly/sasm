@@ -40,7 +40,6 @@ static int output_relocation (FILE *outfile, struct fixup *fixup) {
         switch (fixup->reloc_type) {
         
             case RELOC_TYPE_DEFAULT:
-            case RELOC_TYPE_FAR_CALL:
             
                 switch (fixup->size) {
                 
@@ -82,12 +81,11 @@ static int output_relocation (FILE *outfile, struct fixup *fixup) {
         
         }
     
-    } else {
+    } else if (state->format == AS_OUTPUT_WIN32) {
     
         switch (fixup->reloc_type) {
         
             case RELOC_TYPE_DEFAULT:
-            case RELOC_TYPE_FAR_CALL:
             
                 switch (fixup->size) {
                 
@@ -112,6 +110,13 @@ static int output_relocation (FILE *outfile, struct fixup *fixup) {
             
             case RELOC_TYPE_RVA:
             
+                if (fixup->size != 4) {
+                            
+                    report_at (__FILE__, __LINE__, REPORT_INTERNAL_ERROR, "unsupported COFF relocation size %i for reloc_type RELOC_TYPE_RVA", fixup->size);
+                    exit (EXIT_FAILURE);
+                
+                }
+                
                 type = IMAGE_REL_I386_DIR32NB;
                 break;
             

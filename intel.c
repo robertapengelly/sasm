@@ -3008,22 +3008,28 @@ static int base_index_check (char *operand_string) {
             || (instruction.index_reg && (!instruction.index_reg->type.base_index || !instruction.index_reg->type.qword))) {
             goto bad;
         }
+        
+        return 0;
     
-    } else if (bits == 32) {
+    }
+    
+    if (bits == 32 || cpu_arch_flags.cpu_386) {
     
         if ((instruction.base_reg && !instruction.base_reg->type.dword) || (instruction.index_reg && (!instruction.index_reg->type.base_index || !instruction.index_reg->type.dword))) {
-            goto bad;
+            goto _check16;
         }
+        
+        return 0;
     
-    } else {
+    }
     
-        if ((instruction.base_reg && (!instruction.base_reg->type.base_index || !instruction.base_reg->type.word))
-            || (instruction.index_reg && (!instruction.index_reg->type.base_index || !instruction.index_reg->type.word
-                || !(instruction.base_reg && instruction.base_reg->number < 6 && instruction.index_reg->number >= 6
-                    && instruction.log2_scale_factor == 0)))) {
-            goto bad;
-        }
+_check16:
     
+    if ((instruction.base_reg && (!instruction.base_reg->type.base_index || !instruction.base_reg->type.word))
+        || (instruction.index_reg && (!instruction.index_reg->type.base_index || !instruction.index_reg->type.word
+            || !(instruction.base_reg && instruction.base_reg->number < 6 && instruction.index_reg->number >= 6
+                && instruction.log2_scale_factor == 0)))) {
+        goto bad;
     }
     
     return 0;
