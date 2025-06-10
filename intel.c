@@ -5616,7 +5616,7 @@ static void output_call_or_jumpbyte (void) {
     
     }
     
-    if (fixup && size == 1) {
+    if (fixup) {
     
         switch (size) {
         
@@ -6153,6 +6153,15 @@ void machine_dependent_apply_fixup (struct fixup *fixup, unsigned long value) {
     
     if (!fixup->add_symbol) {
         fixup->done = 1;
+    }
+    
+    if (state->format == AS_OUTPUT_WIN32 || state->format == AS_OUTPUT_WIN64) {
+    
+        /* Not sure why but COFF requires this adjustment. */
+        if (fixup->pcrel && fixup->add_symbol && symbol_get_section (fixup->add_symbol) != current_section) {
+            value += machine_dependent_pcrel_from (fixup);
+        }
+    
     }
     
     if (fixup->reloc_type == RELOC_TYPE_FAR_CALL) {

@@ -455,8 +455,8 @@ static unsigned long fixup_section (struct section *section) {
         if (fixup->sub_symbol) {
         
             struct section *sub_symbol_section;
-            
             symbol_resolve_value (fixup->sub_symbol);
+            
             sub_symbol_section = symbol_get_section (fixup->sub_symbol);
             
             if (fixup->add_symbol && add_symbol_section == sub_symbol_section && !symbol_force_reloc (fixup->add_symbol) && !symbol_force_reloc (fixup->add_symbol)) {

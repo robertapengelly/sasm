@@ -86,6 +86,7 @@ static int output_relocation (FILE *outfile, struct fixup *fixup) {
         switch (fixup->reloc_type) {
         
             case RELOC_TYPE_DEFAULT:
+            case RELOC_TYPE_FAR_CALL:
             
                 switch (fixup->size) {
                 
