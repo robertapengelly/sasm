@@ -87,7 +87,7 @@ static void _print_usage (void) {
         fprintf (stderr, "    -f FORMAT             Specify the format of object file (default elks-ia16)\n");
         fprintf (stderr, "                              Supported formats are:\n");
         fprintf (stderr, "                                  elks-ia16, elks-i386,\n");
-        fprintf (stderr, "                                  win32, win64\n");
+        fprintf (stderr, "                                  coff, win32, win64\n");
         fprintf (stderr, "    -l FILE               Print listings to file FILE.\n");
         fprintf (stderr, "    -o OBJFILE            Name the object-file output OBJFILE (default a.out).\n");
         
@@ -414,6 +414,13 @@ void parse_args (int argc, char **argv, int optind) {
                 if (xstrcasecmp (optarg, "elks-i386") == 0) {
                 
                     state->format = AS_OUTPUT_I386_ELKS;
+                    break;
+                
+                }
+                
+                if (xstrcasecmp (optarg, "coff") == 0) {
+                
+                    state->format = AS_OUTPUT_COFF;
                     break;
                 
                 }

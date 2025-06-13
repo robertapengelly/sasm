@@ -32,9 +32,9 @@ struct segment {
 
 #define     AS_OUTPUT_IA16_ELKS         0x00
 #define     AS_OUTPUT_I386_ELKS         0x01
-
-#define     AS_OUTPUT_WIN32             0x02
-#define     AS_OUTPUT_WIN64             0x03
+#define     AS_OUTPUT_COFF              0x02
+#define     AS_OUTPUT_WIN32             0x03
+#define     AS_OUTPUT_WIN64             0x04
 
 struct as_state {
 

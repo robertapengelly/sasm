@@ -2325,7 +2325,7 @@ void machine_dependent_init (void) {
         machine_dependent_set_march ("generic64");
         machine_dependent_set_bits (64, 1);
     
-    } else if (state->format == AS_OUTPUT_I386_ELKS || state->format == AS_OUTPUT_WIN32) {
+    } else if (state->format == AS_OUTPUT_I386_ELKS || state->format == AS_OUTPUT_COFF || state->format == AS_OUTPUT_WIN32) {
     
         machine_dependent_set_march ("i386");
         machine_dependent_set_bits (32, 1);
@@ -6155,7 +6155,7 @@ void machine_dependent_apply_fixup (struct fixup *fixup, unsigned long value) {
         fixup->done = 1;
     }
     
-    if (state->format == AS_OUTPUT_WIN32 || state->format == AS_OUTPUT_WIN64) {
+    if (state->format == AS_OUTPUT_COFF || state->format == AS_OUTPUT_WIN32 || state->format == AS_OUTPUT_WIN64) {
     
         /* Not sure why but COFF requires this adjustment. */
         if (fixup->pcrel && fixup->add_symbol && symbol_get_section (fixup->add_symbol) != current_section) {

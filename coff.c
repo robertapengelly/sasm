@@ -81,7 +81,7 @@ static int output_relocation (FILE *outfile, struct fixup *fixup) {
         
         }
     
-    } else if (state->format == AS_OUTPUT_WIN32) {
+    } else {
     
         switch (fixup->reloc_type) {
         

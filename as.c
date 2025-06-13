@@ -133,7 +133,7 @@ int main (int argc, char **argv) {
     
     if (state->format == AS_OUTPUT_I386_ELKS || state->format == AS_OUTPUT_IA16_ELKS) {
         output_elks (state->ofp);
-    } else if (state->format == AS_OUTPUT_WIN32 || state->format == AS_OUTPUT_WIN64) {
+    } else if (state->format == AS_OUTPUT_COFF || state->format == AS_OUTPUT_WIN32 || state->format == AS_OUTPUT_WIN64) {
         output_coff (state->ofp);
     }
     
