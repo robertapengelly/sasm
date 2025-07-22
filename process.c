@@ -981,6 +981,13 @@ static void process_line (char *line, char *line_end) {
                 goto check;
             }
             
+            if (xstrcasecmp (arg, "assume") == 0 || xstrcasecmp (arg, "dgroup") == 0) {
+            
+                ignore_rest_of_line (&line);
+                goto check;
+            
+            }
+            
             if (xstrcasecmp (arg, "equ") == 0) {
             
                 report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "equ not preceded by label");
