@@ -353,7 +353,7 @@ static struct section *operand (char *start, char **pp, struct expr *expr, int e
             temp++;
         }
         
-        if (*temp && *temp == 'h') {
+        if (*temp && tolower ((int) *temp) == 'h') {
         
             *temp = ' ';
             goto is_hex;
