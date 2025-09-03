@@ -6313,7 +6313,7 @@ void machine_dependent_assemble_line (char *start, char *line) {
     
     if (current_templates[0].start->base_opcode == 0xC0 && instruction.operands == 2) {
     
-        if (instruction.types[1].imm8 || instruction.types[1].imm8s || instruction.types[1].imm16 || instruction.types[1].imm32 || instruction.types[1].imm32s || instruction.types[1].imm64) {
+        if (instruction.types[1].imm64) {
         
             if (instruction.imms[1]->type == EXPR_TYPE_CONSTANT && instruction.imms[1]->add_number == 1) {
                 instruction.operands--;
