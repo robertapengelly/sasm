@@ -29,8 +29,6 @@ typedef     unsigned long long          uint64_t;
 #endif
 #endif      /* _UINT64_T */
 
-
-
 #endif      /* _STDINT_H_ */
 #endif      /* _STDINT_H */
 #endif      /* _STDINT_H_INCLUDED */
