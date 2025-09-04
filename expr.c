@@ -30,7 +30,7 @@ struct expr_symbol_line {
 
 static struct expr_symbol_line *expr_symbol_lines = 0;
 
-static char *read_character (const char *start, char *p, unsigned long *ch) {
+static char *read_character (const char *start, char *p, uint64_t *ch) {
 
     if (*p == '\\') {
     
@@ -131,7 +131,7 @@ static int chrpos (char *s, int ch) {
 
 static void integer_constant (char *start, char **pp, struct expr *expr, int radix) {
 
-    long value = 0;
+    uint64_t value = 0;
     int k;
     
     while (!is_end_of_line[(int) **pp] && (k = chrpos ("0123456789abcdef", tolower ((int) **pp))) >= 0) {
@@ -757,7 +757,7 @@ struct section *read_into (char *start, char **pp, struct expr *expr, unsigned i
         enum expr_type right_op;
         
         struct section *right_section;
-        signed long offset;
+        int64_t offset;
         
         *pp += operator_size;
         right_section = read_into (start, pp, &right_expr, op_rank_table[left_op], expr_mode);
@@ -834,7 +834,7 @@ struct section *read_into (char *start, char **pp, struct expr *expr, unsigned i
                 case EXPR_TYPE_EQUAL:
                 case EXPR_TYPE_NOT_EQUAL:
                 
-                    expr->add_number = (expr->add_number == right_expr.add_number) ? ~(signed long) 0 : 0;
+                    expr->add_number = (expr->add_number == right_expr.add_number) ? ~(int64_t) 0 : 0;
                     
                     if (left_op == EXPR_TYPE_NOT_EQUAL) {
                         expr->add_number = ~expr->add_number;
@@ -844,22 +844,22 @@ struct section *read_into (char *start, char **pp, struct expr *expr, unsigned i
                 
                 case EXPR_TYPE_LESSER:
                 
-                    expr->add_number = (signed long) expr->add_number < (signed long) right_expr.add_number ? ~(signed long) 0 : 0;
+                    expr->add_number = (int64_t) expr->add_number < (int64_t) right_expr.add_number ? ~(int64_t) 0 : 0;
                     break;
                 
                 case EXPR_TYPE_LESSER_EQUAL:
                 
-                    expr->add_number = (signed long) expr->add_number <= (signed long) right_expr.add_number ? ~(signed long) 0 : 0;
+                    expr->add_number = (int64_t) expr->add_number <= (int64_t) right_expr.add_number ? ~(int64_t) 0 : 0;
                     break;
                 
                 case EXPR_TYPE_GREATER:
                 
-                    expr->add_number = (signed long) expr->add_number > (signed long) right_expr.add_number ? ~(signed long) 0 : 0;
+                    expr->add_number = (int64_t) expr->add_number > (int64_t) right_expr.add_number ? ~(int64_t) 0 : 0;
                     break;
                 
                 case EXPR_TYPE_GREATER_EQUAL:
                 
-                    expr->add_number = (signed long) expr->add_number >= (signed long) right_expr.add_number ? ~(signed long) 0 : 0;
+                    expr->add_number = (int64_t) expr->add_number >= (int64_t) right_expr.add_number ? ~(int64_t) 0 : 0;
                     break;
                 
                 case EXPR_TYPE_ADD:
@@ -904,12 +904,12 @@ struct section *read_into (char *start, char **pp, struct expr *expr, unsigned i
                 
                 case EXPR_TYPE_LEFT_SHIFT:
                 
-                    expr->add_number = (signed long) (expr->add_number) << (signed long) (right_expr.add_number);
+                    expr->add_number = (uint64_t) (expr->add_number) << (int64_t) (right_expr.add_number);
                     break;
                 
                 case EXPR_TYPE_RIGHT_SHIFT:
                 
-                    expr->add_number = (unsigned long) (expr->add_number) >> (unsigned long) (right_expr.add_number);
+                    expr->add_number = (uint64_t) (expr->add_number) >> (uint64_t) (right_expr.add_number);
                     break;
                 
                 default:
@@ -1010,7 +1010,7 @@ struct symbol *make_expr_symbol (struct expr *expr) {
 
 }
 
-signed long absolute_expression_read_into (char *start, char **pp, struct expr *expr) {
+int64_t absolute_expression_read_into (char *start, char **pp, struct expr *expr) {
 
     expression_evaluate_and_read_into (start, pp, expr);
     
@@ -1049,7 +1049,7 @@ int expr_symbol_get_filename_and_line_number (struct symbol *symbol, const char 
 
 }
 
-signed long get_result_of_absolute_expression (char *start, char **pp) {
+int64_t get_result_of_absolute_expression (char *start, char **pp) {
 
     struct expr expr;
     return absolute_expression_read_into (start, pp, &expr);
@@ -1064,11 +1064,11 @@ int resolve_expression (struct expr *expr) {
     struct symbol *add_symbol = expr->add_symbol;
     struct symbol *original_add_symbol = add_symbol;
     
-    unsigned long final_value = expr->add_number;
-    unsigned long left_value, right_value;
+    uint64_t final_value = expr->add_number;
+    uint64_t left_value, right_value;
     
     struct section *left_section, *right_section;
-    signed long frag_offset;
+    int64_t frag_offset;
     
     switch (expr->type) {
     
@@ -1290,7 +1290,7 @@ int resolve_expression (struct expr *expr) {
                 case EXPR_TYPE_EQUAL:
                 case EXPR_TYPE_NOT_EQUAL:
                 
-                    left_value = ((left_value == right_value && left_section == right_section && (finalize_symbols || left_frag == right_frag) && (left_section != undefined_section || add_symbol == op_symbol)) ? ~(unsigned long) 0 : 0);
+                    left_value = ((left_value == right_value && left_section == right_section && (finalize_symbols || left_frag == right_frag) && (left_section != undefined_section || add_symbol == op_symbol)) ? ~(uint64_t) 0 : 0);
                     
                     if (expr->type == EXPR_TYPE_NOT_EQUAL) {
                         left_value = ~left_value;
@@ -1300,22 +1300,22 @@ int resolve_expression (struct expr *expr) {
                 
                 case EXPR_TYPE_LESSER:
                 
-                    left_value = (signed long) left_value < (signed long) right_value ? ~(unsigned long) 0 : 0;
+                    left_value = (int64_t) left_value < (int64_t) right_value ? ~(uint64_t) 0 : 0;
                     break;
                 
                 case EXPR_TYPE_LESSER_EQUAL:
                 
-                    left_value = (signed long) left_value <= (signed long) right_value ? ~(unsigned long) 0 : 0;
+                    left_value = (int64_t) left_value <= (int64_t) right_value ? ~(uint64_t) 0 : 0;
                     break;
                 
                 case EXPR_TYPE_GREATER:
                 
-                    left_value = (signed long) left_value > (signed long) right_value ? ~(unsigned long) 0 : 0;
+                    left_value = (int64_t) left_value > (int64_t) right_value ? ~(uint64_t) 0 : 0;
                     break;
                 
                 case EXPR_TYPE_GREATER_EQUAL:
                 
-                    left_value = (signed long) left_value >= (signed long) right_value ? ~(unsigned long) 0 : 0;
+                    left_value = (int64_t) left_value >= (int64_t) right_value ? ~(uint64_t) 0 : 0;
                     break;
                 
                 case EXPR_TYPE_ADD:
@@ -1368,12 +1368,12 @@ int resolve_expression (struct expr *expr) {
                 
                 case EXPR_TYPE_LEFT_SHIFT:
                 
-                    left_value = (unsigned long) left_value << (unsigned long) right_value;
+                    left_value = (uint64_t) left_value << (uint64_t) right_value;
                     break;
                 
                 case EXPR_TYPE_RIGHT_SHIFT:
                 
-                    left_value = (unsigned long) left_value >> (unsigned long) right_value;
+                    left_value = (uint64_t) left_value >> (uint64_t) right_value;
                     break;
                 
                 default:

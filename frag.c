@@ -12,9 +12,9 @@ struct frag *frag_alloc (void) {
     return xmalloc (sizeof (struct frag));
 }
 
-int frags_is_greater_than_offset (unsigned long offset2, struct frag *frag2, unsigned long offset1, struct frag *frag1, signed long *offset_p) {
+int frags_is_greater_than_offset (uint64_t offset2, struct frag *frag2, uint64_t offset1, struct frag *frag1, int64_t *offset_p) {
 
-    signed long difference;
+    int64_t difference;
     struct frag *frag;
     
     /* Checks for something that should be impossible. */
@@ -50,9 +50,9 @@ int frags_is_greater_than_offset (unsigned long offset2, struct frag *frag2, uns
 
 }
 
-int frags_offset_is_fixed (struct frag *frag1, struct frag *frag2, signed long *offset_p) {
+int frags_offset_is_fixed (struct frag *frag1, struct frag *frag2, int64_t *offset_p) {
 
-    signed long offset = frag1->address - frag2->address;
+    int64_t offset = frag1->address - frag2->address;
     struct frag *frag;
     
     if (frag1 == frag2) {
@@ -122,7 +122,7 @@ unsigned char *finished_frag_increase_fixed_size_by_frag_offset (struct frag *fr
 
 }
 
-unsigned char *frag_alloc_space (unsigned long space) {
+unsigned char *frag_alloc_space (uint64_t space) {
 
     if (current_frag->fixed_size + space >= current_frag->size) {
     
@@ -135,7 +135,7 @@ unsigned char *frag_alloc_space (unsigned long space) {
 
 }
 
-unsigned char *frag_increase_fixed_size (unsigned long increase) {
+unsigned char *frag_increase_fixed_size (uint64_t increase) {
 
     frag_alloc_space (increase);
     
@@ -144,14 +144,14 @@ unsigned char *frag_increase_fixed_size (unsigned long increase) {
 
 }
 
-void frag_align (signed long alignment, int fill_char, signed long max_bytes_to_skip) {
+void frag_align (int64_t alignment, int fill_char, int64_t max_bytes_to_skip) {
 
     (frag_alloc_space (1 << alignment))[0] = fill_char;
     frag_set_as_variant (RELAX_TYPE_ALIGN, max_bytes_to_skip, 0, alignment, 0);
 
 }
 
-void frag_align_code (signed long alignment, signed long max_bytes_to_skip) {
+void frag_align_code (int64_t alignment, int64_t max_bytes_to_skip) {
 
     (frag_alloc_space (1 << alignment))[0] = 0x90;
     frag_set_as_variant (RELAX_TYPE_ALIGN_CODE, max_bytes_to_skip, 0, alignment, 0);
@@ -183,7 +183,7 @@ void frag_new (void) {
 
 }
 
-void frag_set_as_variant (int relax_type, int relax_subtype, struct symbol *symbol, signed long offset, unsigned long opcode_offset_in_buf) {
+void frag_set_as_variant (int relax_type, int relax_subtype, struct symbol *symbol, int64_t offset, uint64_t opcode_offset_in_buf) {
 
     current_frag->relax_type           = relax_type;
     current_frag->relax_subtype        = relax_subtype;

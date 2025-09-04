@@ -4,6 +4,8 @@
 #ifndef     _EXPR_H
 #define     _EXPR_H
 
+#include    "stdint.h"
+
 enum expr_type {
 
     EXPR_TYPE_INVALID,
@@ -65,7 +67,7 @@ struct expr {
     struct symbol *add_symbol;
     struct symbol *op_symbol;
     
-    unsigned long add_number;
+    uint64_t add_number;
 
 };
 
@@ -78,8 +80,8 @@ struct section *read_into (char *start, char **pp, struct expr *expr, unsigned i
 struct symbol *make_expr_symbol (struct expr *expr);
 void expr_type_set_rank (enum expr_type expr_type, unsigned int rank);
 
-signed long absolute_expression_read_into (char *start, char **pp, struct expr *expr);
-signed long get_result_of_absolute_expression (char *start, char **pp);
+int64_t absolute_expression_read_into (char *start, char **pp, struct expr *expr);
+int64_t get_result_of_absolute_expression (char *start, char **pp);
 
 int expr_symbol_get_filename_and_line_number (struct symbol *symbol, const char **filename_p, unsigned long *line_number_p);
 int resolve_expression (struct expr *expr);

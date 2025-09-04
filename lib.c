@@ -568,10 +568,6 @@ void set_filename_and_line_number (const char *__filename, unsigned long __line_
 
 }
 
-void set_filename (const char *__filename) {
-    filename = __filename;
-}
-
 void set_line_number (unsigned long __line_number) {
     line_number = __line_number;
 }

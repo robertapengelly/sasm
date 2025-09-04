@@ -12,7 +12,7 @@
 #include    "section.h"
 #include    "symbol.h"
 
-static struct fixup *fixup_new_internal (struct frag *frag, unsigned long where, int size, struct symbol *add_symbol, struct symbol *sub_symbol, long add_number, int pcrel, int reloc_type) {
+static struct fixup *fixup_new_internal (struct frag *frag, unsigned long where, int size, struct symbol *add_symbol, struct symbol *sub_symbol, int64_t add_number, int pcrel, int reloc_type) {
 
     struct fixup *fixup = xmalloc (sizeof (*fixup));
     
@@ -38,14 +38,14 @@ static struct fixup *fixup_new_internal (struct frag *frag, unsigned long where,
 
 }
 
-struct fixup *fixup_new (struct frag *frag, unsigned long where, int size, struct symbol *add_symbol, long add_number, int pcrel, int reloc_type) {
+struct fixup *fixup_new (struct frag *frag, unsigned long where, int size, struct symbol *add_symbol, int64_t add_number, int pcrel, int reloc_type) {
     return fixup_new_internal (frag, where, size, add_symbol, 0, add_number, pcrel, reloc_type);
 }
 
 struct fixup *fixup_new_expr (struct frag *frag, unsigned long where, int size, struct expr *expr, int pcrel, int reloc_type) {
 
     struct symbol *add_symbol = 0, *sub_symbol = 0;
-    signed long add_number = 0;
+    int64_t add_number = 0;
     
     switch (expr->type) {
     
@@ -82,8 +82,8 @@ struct fixup *fixup_new_expr (struct frag *frag, unsigned long where, int size, 
 }
 
 
-signed long machine_dependent_estimate_size_before_relax (struct frag *frag, struct section *section);
-signed long machine_dependent_relax_frag (struct frag *frag, struct section *section, signed long change);
+int64_t machine_dependent_estimate_size_before_relax (struct frag *frag, struct section *section);
+int64_t machine_dependent_relax_frag (struct frag *frag, struct section *section, int64_t change);
 
 void machine_dependent_finish_frag (struct frag *frag);
 
@@ -337,7 +337,7 @@ static void finish_frags_after_relaxation (struct section *section) {
             case RELAX_TYPE_ALIGN_CODE:
             case RELAX_TYPE_SPACE: {
             
-                signed long i;
+                int64_t i;
                 
                 unsigned char *p;
                 unsigned char fill;
@@ -429,15 +429,16 @@ static void adjust_reloc_symbols_of_section (struct section *section) {
 
 }
 
-signed long machine_dependent_pcrel_from (struct fixup *fixup);
+#include    "inttypes.h"
+int64_t machine_dependent_pcrel_from (struct fixup *fixup);
 
 int machine_dependent_force_relocation_local (struct fixup *fixup);
-void machine_dependent_apply_fixup (struct fixup *fixup, unsigned long value);
+void machine_dependent_apply_fixup (struct fixup *fixup, uint64_t value);
 
 static unsigned long fixup_section (struct section *section) {
 
     unsigned long section_reloc_count = 0;
-    unsigned long add_number;
+    uint64_t add_number;
     
     struct section *add_symbol_section = absolute_section;
     struct fixup *fixup;
@@ -531,15 +532,15 @@ static unsigned long fixup_section (struct section *section) {
             section_reloc_count++;
         }
         
-        if (fixup->size < sizeof (unsigned long)) {
+        if (fixup->size < sizeof (uint64_t)) {
         
-            unsigned long mask = -1;
+            uint64_t mask = -1;
             mask <<= fixup->size * 8 - !!fixup->fixup_signed;
             
             if ((add_number & mask) && (fixup->fixup_signed ? ((add_number & mask) != mask) : (-add_number & mask))) {
             
-                report_at (0, 0, REPORT_ERROR, (add_number > 1000)
-                    ? "value of %lu too large for field of %u byte%s at %#lx" : "value of %lu too large for field of %u byte%s at %#lx",
+                report_at (0, 0, REPORT_ERROR, (add_number > 1000) ?
+                    "value of %#"PRIx64"too large for field of %u byte%s at %#lx" : "value of %"PRIu64" too large for field of %u byte%s at %#lx",
                         add_number, fixup->size, ((fixup->size == 1) ? "" : "s"), fixup->frag->address + fixup->where);
             
             }

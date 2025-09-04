@@ -19,14 +19,14 @@ struct fixup {
     unsigned int size;
     
     struct symbol *add_symbol, *sub_symbol;
-    long add_number;
+    int64_t add_number;
     
     int pcrel, reloc_type;
     struct fixup *next;
 
 };
 
-struct fixup *fixup_new (struct frag *frag, unsigned long where, int size, struct symbol *add_symbol, long add_number, int pcrel, int reloc_type);
+struct fixup *fixup_new (struct frag *frag, unsigned long where, int size, struct symbol *add_symbol, int64_t add_number, int pcrel, int reloc_type);
 struct fixup *fixup_new_expr (struct frag *frag, unsigned long where, int size, struct expr *expr, int pcrel, int reloc_type);
 
 #endif  /* _FIXUP_H */

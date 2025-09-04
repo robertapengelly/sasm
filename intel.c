@@ -1583,7 +1583,7 @@ static struct {
     struct reg_entry *base_reg;
     struct reg_entry *index_reg;
     
-    signed long scale_factor;
+    int scale_factor;
     struct symbol *segment;
 
 } intel_state;
@@ -3585,7 +3585,7 @@ static void intel_fold_symbol_into_expr (struct expr *expr, struct symbol *symbo
     
     if (symbol_get_section (symbol) == absolute_section) {
     
-        signed int add_number = expr->add_number;
+        int64_t add_number = expr->add_number;
         
         *expr = *symbol_expr;
         expr->add_number += add_number;
@@ -4012,37 +4012,36 @@ static void swap_operands (void) {
 
 }
 
-static int fits_in_signed_byte (signed long number) {
+static int fits_in_signed_byte (int64_t number) {
     return ((number >= -128) && (number <= 127));
 }
 
-static int fits_in_unsigned_byte (unsigned long number) {
+static int fits_in_unsigned_byte (uint64_t number) {
     return ((number & 0xff) == number);
 }
 
-static int fits_in_signed_word (signed long number) {
+static int fits_in_signed_word (int64_t number) {
     return ((number >= -32768) && (number <= 32767));
 }
 
-static int fits_in_unsigned_word (unsigned long number) {
+static int fits_in_unsigned_word (uint64_t number) {
     return ((number & 0xffff) == number);
 }
 
-static int fits_in_signed_long (signed long number) {
-
-#if     defined (__WATCOMC__)
-    return 1;
+#if     defined (NO_LONG_LONG)
+# define    fits_in_signed_long(x)                          1
+# define    fits_in_unsigned_long(x)                        1     
 #else
+static int fits_in_signed_long (int64_t number) {
     return ((number >= -2147483647-1) && (number <= 2147483647));
-#endif
-
 }
 
-static int fits_in_unsigned_long (unsigned long number) {
+static int fits_in_unsigned_long (uint64_t number) {
     return ((number & 0xffffffff) == number);
 }
+#endif
 
-static struct operand_type smallest_imm_type (long number) {
+static struct operand_type smallest_imm_type (int64_t number) {
     
     struct operand_type type = { 0 };
     type.imm64 = 1;
@@ -4091,7 +4090,7 @@ static void optimize_size_of_disps (void) {
         
             if (instruction.disps[operand]->type == EXPR_TYPE_CONSTANT) {
             
-                signed long disp = instruction.disps[operand]->add_number;
+                int64_t disp = instruction.disps[operand]->add_number;
                 
                 if (disp == 0 && instruction.types[operand].base_index) {
                 
@@ -4105,7 +4104,7 @@ static void optimize_size_of_disps (void) {
                 
                 if (instruction.types[operand].disp32 && fits_in_unsigned_long (disp)) {
                 
-                    disp = (disp ^ ((signed long) 1 << 31)) - ((signed long) 1 << 31);
+                    disp = (disp ^ ((int64_t) 1 << 31)) - ((int64_t) 1 << 31);
                     
                     instruction.types[operand].disp64 = 0;
                     instruction.types[operand].disp32 = 1;
@@ -5438,8 +5437,8 @@ static void output_jump (void) {
     struct symbol *symbol;
     unsigned int relax_subtype;
     
-    unsigned long offset;
-    unsigned long opcode_offset_in_buf;
+    int64_t offset;
+    uint64_t opcode_offset_in_buf;
     
     unsigned int code16 = 0;
     
@@ -5506,7 +5505,7 @@ static void output_jump (void) {
 
 }
 
-void machine_dependent_number_to_chars (unsigned char *p, unsigned int number, unsigned int size);
+void machine_dependent_number_to_chars (unsigned char *p, uint64_t number, unsigned int size);
 
 static void output_call_or_jumpbyte (void) {
 
@@ -5690,7 +5689,7 @@ static void output_intersegment_jump (void) {
 
 }
 
-static long convert_number_to_size (unsigned long value, int size) {
+static uint64_t convert_number_to_size (uint64_t value, int size) {
 
     unsigned long mask;
     
@@ -5779,7 +5778,7 @@ static void output_disps (void) {
             
             if (instruction.disps[operand]->type == EXPR_TYPE_CONSTANT) {
             
-                unsigned long value = convert_number_to_size (instruction.disps[operand]->add_number, size);
+                uint64_t value = convert_number_to_size (instruction.disps[operand]->add_number, size);
                 machine_dependent_number_to_chars (frag_increase_fixed_size (size), value, size);
             
             } else {
@@ -5830,7 +5829,7 @@ static void output_imms (void) {
             
             if (instruction.imms[operand]->type == EXPR_TYPE_CONSTANT) {
             
-                unsigned long value = convert_number_to_size (instruction.imms[operand]->add_number, size);
+                uint64_t value = convert_number_to_size (instruction.imms[operand]->add_number, size);
                 machine_dependent_number_to_chars (frag_increase_fixed_size (size), value, size);
             
             } else {
@@ -6005,7 +6004,7 @@ int machine_dependent_parse_name (char **pp, struct expr *expr, char *name, char
 
 }
 
-signed long machine_dependent_estimate_size_before_relax (struct frag *frag, struct section *section) {
+int64_t machine_dependent_estimate_size_before_relax (struct frag *frag, struct section *section) {
 
     if (symbol_get_section (frag->symbol) != section) {
     
@@ -6013,7 +6012,7 @@ signed long machine_dependent_estimate_size_before_relax (struct frag *frag, str
         int size = (frag->relax_subtype & RELAX_SUBTYPE_CODE16_JUMP) ? 2 : 4;
         
         unsigned char *opcode_pos = frag->buf + frag->opcode_offset_in_buf;
-        unsigned long old_frag_fixed_size = frag->fixed_size;
+        uint64_t old_frag_fixed_size = frag->fixed_size;
         
         switch (TYPE_FROM_RELAX_SUBTYPE (frag->relax_subtype)) {
         
@@ -6090,17 +6089,16 @@ signed long machine_dependent_estimate_size_before_relax (struct frag *frag, str
 
 }
 
-signed long machine_dependent_pcrel_from (struct fixup *fixup) {
+int64_t machine_dependent_pcrel_from (struct fixup *fixup) {
     return (fixup->size + fixup->where + fixup->frag->address);
 }
 
-signed long machine_dependent_relax_frag (struct frag *frag, struct section *section, signed long change) {
+int64_t machine_dependent_relax_frag (struct frag *frag, struct section *section, int64_t change) {
 
-    unsigned long target;
+    int64_t aim, growth;
+    uint64_t target;
     
     unsigned int new_subtype;
-    signed long aim, growth;
-    
     target = frag->offset;
     
     if (frag->symbol) {
@@ -6147,7 +6145,7 @@ signed long machine_dependent_relax_frag (struct frag *frag, struct section *sec
 
 }
 
-void machine_dependent_apply_fixup (struct fixup *fixup, unsigned long value) {
+void machine_dependent_apply_fixup (struct fixup *fixup, uint64_t value) {
 
     unsigned char *p = fixup->where + fixup->frag->buf;
     
@@ -6489,7 +6487,7 @@ void machine_dependent_assemble_line (char *start, char *line) {
 
 }
 
-void machine_dependent_number_to_chars (unsigned char *p, unsigned int number, unsigned int size) {
+void machine_dependent_number_to_chars (unsigned char *p, uint64_t number, unsigned int size) {
 
     unsigned int i;
     

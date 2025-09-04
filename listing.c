@@ -132,6 +132,8 @@ void add_listing_message (char *message, const char *filename, unsigned long lin
 
 }
 
+#include    "inttypes.h"
+
 void generate_listing (void) {
 
     struct ll *ll;
@@ -186,7 +188,7 @@ void generate_listing (void) {
         }
         
         if (ll->frag) {
-            fprintf (f, "%04lX ", ll->frag->address + ll->where);
+            fprintf (f, "%04"PRIx64, ll->frag->address + ll->where);
         } else {
             fprintf (f, "     ");
         }
@@ -235,7 +237,7 @@ void generate_listing (void) {
                     continue;
                 }
                 
-                fprintf (f, "    %08lx    %s\n", symbol_get_value (symbol), symbol_get_name (symbol));
+                fprintf (f, "    %08"PRIx64"    %s\n", symbol_get_value (symbol), symbol_get_name (symbol));
             
             }
         
@@ -257,7 +259,7 @@ void generate_listing (void) {
                     continue;
                 }
                 
-                fprintf (f, "    %08lx    %s\n", symbol_get_value (symbol), symbol_get_name (symbol));
+                fprintf (f, "    %08"PRIx64"    %s\n", symbol_get_value (symbol), symbol_get_name (symbol));
             
             }
         
@@ -276,7 +278,7 @@ void generate_listing (void) {
                 }
                 
                 if (symbol_is_undefined (symbol)) {
-                    fprintf (f, "    %08lx    %s\n", symbol_get_value (symbol), symbol_get_name (symbol));
+                    fprintf (f, "    %08"PRIx64"    %s\n", symbol_get_value (symbol), symbol_get_name (symbol));
                 }
             
             }

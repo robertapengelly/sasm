@@ -33,10 +33,8 @@ void *xrealloc (void *__ptr, unsigned long __size);
 const char *get_filename (void);
 unsigned long get_line_number (void);
 
-void set_filename (const char *__filename);
-void set_line_number (unsigned long __line_number);
-
 void get_filename_and_line_number (const char **__filename_p, unsigned long *__line_number_p);
+void set_line_number (unsigned long __line_number);
 void set_filename_and_line_number (const char *__filename, unsigned long __line_number);
 
 #endif      /* _LIB_H */

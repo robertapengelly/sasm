@@ -123,11 +123,11 @@ static int read_character (const char *start, char **pp, unsigned long *val) {
 
 static void align_bytes (char *start, char **pp, int first_arg_is_bytes) {
 
-    signed long alignment;
+    int64_t alignment;
     int fill_specified;
     
-    signed long fill_value = 0, max_bytes_to_skip;
-    signed long i;
+    int64_t fill_value = 0, max_bytes_to_skip;
+    int64_t i;
     
     alignment = get_result_of_absolute_expression (start, pp);
 
@@ -191,7 +191,7 @@ static void align_bytes (char *start, char **pp, int first_arg_is_bytes) {
 
 }
 
-void machine_dependent_number_to_chars (unsigned char *p, unsigned int number, unsigned int size);
+void machine_dependent_number_to_chars (unsigned char *p, uint64_t number, unsigned int size);
 
 static void handle_constant (char *start, char **pp, int size) {
 

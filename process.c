@@ -705,8 +705,7 @@ int preprocess_init (void) {
     struct list *item;
     char *opt, *nopt, *p;
     
-    set_filename (xstrdup ("<command-line>"));
-    set_line_number (1);
+    set_filename_and_line_number (xstrdup ("<command-line>"), 1);
     
     if (state->pplist) {
     
@@ -1205,12 +1204,12 @@ void process_file (const char *ifile) {
     
     if (!ifile || strcmp (ifile, "-") == 0) {
     
-        set_filename (xstrdup ("<stdin>"));
+        set_filename_and_line_number (xstrdup ("<stdin>"), 0);
         fp = stdin;
     
     } else {
     
-        set_filename (xstrdup (ifile));
+        set_filename_and_line_number (xstrdup (ifile), 0);
         
         if (!(fp = fopen (ifile, "r"))) {
         
@@ -1221,9 +1220,7 @@ void process_file (const char *ifile) {
     
     }
     
-    set_line_number (0);
     new_line_number = 1;
-    
     load_line_internal_data = load_line_create_internal_data (&new_line_number);
     
     while (!load_line (&line, &line_end, &real_line, &real_line_len, &newlines, fp, &load_line_internal_data)) {

@@ -265,7 +265,7 @@ char *symbol_get_name (struct symbol *symbol) {
     return symbol->name;
 }
 
-int get_symbol_snapshot (struct symbol **symbol_p, unsigned long *value_p, struct section **section_p, struct frag **frag_p) {
+int get_symbol_snapshot (struct symbol **symbol_p, uint64_t *value_p, struct section **section_p, struct frag **frag_p) {
 
     struct symbol *symbol = *symbol_p;
     struct expr *expr = symbol_get_value_expression (symbol);
@@ -374,16 +374,16 @@ unsigned long symbol_get_symbol_table_index (struct symbol *symbol) {
     return symbol->symbol_table_index;
 }
 
-unsigned long symbol_get_value (struct symbol *symbol) {
+uint64_t symbol_get_value (struct symbol *symbol) {
     return symbol_resolve_value (symbol);
 }
 
-unsigned long symbol_resolve_value (struct symbol *symbol) {
+uint64_t symbol_resolve_value (struct symbol *symbol) {
 
     struct section *final_section = symbol_get_section (symbol);
     int resolved = 0;
     
-    unsigned long final_value = 0;
+    uint64_t final_value = 0;
     
     if (symbol->resolved) {
     
@@ -405,7 +405,7 @@ unsigned long symbol_resolve_value (struct symbol *symbol) {
     } else {
     
         struct section *left_section, *right_section;
-        unsigned long left_value, right_value;
+        uint64_t left_value, right_value;
         
         int can_move_into_absolute_section;
         
@@ -630,7 +630,7 @@ unsigned long symbol_resolve_value (struct symbol *symbol) {
                     case EXPR_TYPE_EQUAL:
                     case EXPR_TYPE_NOT_EQUAL:
                     
-                        left_value = ((left_value == right_value && left_section == right_section && (left_section != undefined_section || symbol->value.add_symbol == symbol->value.op_symbol)) ? ~(signed long) 0 : 0);
+                        left_value = ((left_value == right_value && left_section == right_section && (left_section != undefined_section || symbol->value.add_symbol == symbol->value.op_symbol)) ? ~(int64_t) 0 : 0);
                         
                         if (symbol->value.type == EXPR_TYPE_NOT_EQUAL) {
                             left_value = ~left_value;
@@ -640,22 +640,22 @@ unsigned long symbol_resolve_value (struct symbol *symbol) {
                     
                     case EXPR_TYPE_LESSER:
                     
-                        left_value = left_value < right_value ? ~(signed long) 0 : 0;
+                        left_value = left_value < right_value ? ~(int64_t) 0 : 0;
                         break;
                     
                     case EXPR_TYPE_LESSER_EQUAL:
                     
-                        left_value = left_value <= right_value ? ~(signed long) 0 : 0;
+                        left_value = left_value <= right_value ? ~(int64_t) 0 : 0;
                         break;
                     
                     case EXPR_TYPE_GREATER:
                     
-                        left_value = left_value > right_value ? ~(signed long) 0 : 0;
+                        left_value = left_value > right_value ? ~(int64_t) 0 : 0;
                         break;
                     
                     case EXPR_TYPE_GREATER_EQUAL:
                     
-                        left_value = left_value >= right_value ? ~(signed long) 0 : 0;
+                        left_value = left_value >= right_value ? ~(int64_t) 0 : 0;
                         break;
                     
                     case EXPR_TYPE_ADD:
@@ -700,12 +700,12 @@ unsigned long symbol_resolve_value (struct symbol *symbol) {
                     
                     case EXPR_TYPE_LEFT_SHIFT:
                     
-                        left_value = ~(unsigned long) left_value << ~(unsigned long) right_value;
+                        left_value = ~(uint64_t) left_value << ~(uint64_t) right_value;
                         break;
                     
                     case EXPR_TYPE_RIGHT_SHIFT:
                     
-                        left_value = ~(unsigned long) left_value >> ~(unsigned long) right_value;
+                        left_value = ~(uint64_t) left_value >> ~(uint64_t) right_value;
                         break;
                     
                     default:
@@ -784,7 +784,7 @@ void symbol_set_symbol_table_index (struct symbol *symbol, unsigned long index) 
     symbol->symbol_table_index = index;
 }
 
-void symbol_set_value (struct symbol *symbol, unsigned long value) {
+void symbol_set_value (struct symbol *symbol, uint64_t value) {
 
     symbol->value.type = EXPR_TYPE_CONSTANT;
     symbol->value.add_number = value;

@@ -39,12 +39,16 @@ void add_macro (char *start, char **pp, int report_line) {
     struct hashtab_name *key;
     struct macro *m;
     
+    const char *filename;
+    unsigned long line_number;
+    get_filename_and_line_number (&filename, &line_number);
+    
     if (is_end_of_line[(int) **pp]) {
     
         if (report_line) {
-            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret - 1, "no macro name give in %%define directive");
+            report_line_at (filename, line_number, REPORT_ERROR, start, caret - 1, "no macro name give in %%define directive");
         } else {
-            report_at (get_filename (), get_line_number (), REPORT_ERROR, "no macro name give in %%define directive");
+            report_at (filename, line_number, REPORT_ERROR, "no macro name give in %%define directive");
         }
         
         return;
@@ -54,9 +58,9 @@ void add_macro (char *start, char **pp, int report_line) {
     if (!(sname = symname (pp))) {
     
         if (report_line) {
-            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "macro names must be identifiers");
+            report_line_at (filename, line_number, REPORT_ERROR, start, caret, "macro names must be identifiers");
         } else {
-            report_at (get_filename (), get_line_number (), REPORT_ERROR, "macro names must be identifiers");
+            report_at (filename, line_number, REPORT_ERROR, "macro names must be identifiers");
         }
         
         return;
@@ -66,9 +70,9 @@ void add_macro (char *start, char **pp, int report_line) {
     if (strcmp (sname, "defined") == 0) {
     
         if (report_line) {
-            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "\"%s\" cannout be used as a macro name", sname);
+            report_line_at (filename, line_number, REPORT_ERROR, start, caret, "\"%s\" cannout be used as a macro name", sname);
         } else {
-            report_at (get_filename (), get_line_number (), REPORT_ERROR, "\"%s\" cannout be used as a macro name", sname);
+            report_at (filename, line_number, REPORT_ERROR, "\"%s\" cannout be used as a macro name", sname);
         }
         
         return;
@@ -78,9 +82,9 @@ void add_macro (char *start, char **pp, int report_line) {
     if (**pp != '(' && !isspace ((int) **pp)) {
     
         if (report_line) {
-            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, *pp, "whitespace is required after macro name");
+            report_line_at (filename, line_number, REPORT_ERROR, start, *pp, "whitespace is required after macro name");
         } else {
-            report_at (get_filename (), get_line_number (), REPORT_ERROR, "whitespace is required after macro name");
+            report_at (filename, line_number, REPORT_ERROR, "whitespace is required after macro name");
         }
     
         return;
@@ -90,9 +94,9 @@ void add_macro (char *start, char **pp, int report_line) {
     if ((key = find_macro (sname))) {
     
         if (report_line) {
-            report_line_at (get_filename (), get_line_number (), REPORT_WARNING, start, caret, "\"%s\" redefined", sname);
+            report_line_at (filename, line_number, REPORT_WARNING, start, caret, "\"%s\" redefined", sname);
         } else {
-            report_at (get_filename (), get_line_number (), REPORT_WARNING, "\"%s\" redefined", sname);
+            report_at (filename, line_number, REPORT_WARNING, "\"%s\" redefined", sname);
         }
         
         if ((m = hashtab_get (&hashtab_macros, key))) {
@@ -140,9 +144,9 @@ void add_macro (char *start, char **pp, int report_line) {
             if (m->is_variadic) {
             
                 if (report_line) {
-                    report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, *pp, "expected ')' after '...'");
+                    report_line_at (filename, line_number, REPORT_ERROR, start, *pp, "expected ')' after '...'");
                 } else {
-                    report_at (get_filename (), get_line_number (), REPORT_ERROR, "expected ')' after '...'");
+                    report_at (filename, line_number, REPORT_ERROR, "expected ')' after '...'");
                 }
                 
                 while ((arg = vec_pop (&m->args))) {
@@ -189,9 +193,9 @@ void add_macro (char *start, char **pp, int report_line) {
                 if (**pp != ',' && **pp != ')') {
                 
                     if (report_line) {
-                        report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, *pp, "expected ',' or, ')' after parameter");
+                        report_line_at (filename, line_number, REPORT_ERROR, start, *pp, "expected ',' or, ')' after parameter");
                     } else {
-                        report_at (get_filename (), get_line_number (), REPORT_ERROR, "expected ',' or, ')' after parameter");
+                        report_at (filename, line_number, REPORT_ERROR, "expected ',' or, ')' after parameter");
                     }
                     
                     goto err;
@@ -208,9 +212,9 @@ void add_macro (char *start, char **pp, int report_line) {
             }
             
             if (report_line) {
-                report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, *pp, "expected parameter name");
+                report_line_at (filename, line_number, REPORT_ERROR, start, *pp, "expected parameter name");
             } else {
-                report_at (get_filename (), get_line_number (), REPORT_ERROR, "expected parameter name");
+                report_at (filename, line_number, REPORT_ERROR, "expected parameter name");
             }
             
             goto err;
@@ -220,9 +224,9 @@ void add_macro (char *start, char **pp, int report_line) {
         if (**pp != ')') {
         
             if (report_line) {
-                report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, *pp, "expected ')' before end of line");
+                report_line_at (filename, line_number, REPORT_ERROR, start, *pp, "expected ')' before end of line");
             } else {
-                report_at (get_filename (), get_line_number (), REPORT_ERROR, "expected ')' before end of line");
+                report_at (filename, line_number, REPORT_ERROR, "expected ')' before end of line");
             }
             
             goto err;
@@ -254,9 +258,9 @@ void add_macro (char *start, char **pp, int report_line) {
             haystack = (p + strlen (needle));
             
             if (report_line) {
-                report_line_at (get_filename (), get_line_number (), REPORT_WARNING, m->value, p, "%s can only appear in the expansion of a variadic macro", needle);
+                report_line_at (filename, line_number, REPORT_WARNING, m->value, p, "%s can only appear in the expansion of a variadic macro", needle);
             } else {
-                report_at (get_filename (), get_line_number (), REPORT_WARNING, "%s can only appear in the expansion of a variadic macro", needle);
+                report_at (filename, line_number, REPORT_WARNING, "%s can only appear in the expansion of a variadic macro", needle);
             }
         
         }
@@ -283,12 +287,16 @@ void remove_macro (char *start, char **pp, int report_line) {
     struct hashtab_name *key;
     struct macro *mp;
     
+    const char *filename;
+    unsigned long line_number;
+    get_filename_and_line_number (&filename, &line_number);
+    
     if (!(sname = symname (pp))) {
     
         if (report_line) {
-            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "macro names must be identifiers");
+            report_line_at (filename, line_number, REPORT_ERROR, start, caret, "macro names must be identifiers");
         } else {
-            report_at (get_filename (), get_line_number (), REPORT_ERROR, "macro names must be identifiers");
+            report_at (filename, line_number, REPORT_ERROR, "macro names must be identifiers");
         }
         
         return;
@@ -310,9 +318,9 @@ void remove_macro (char *start, char **pp, int report_line) {
     if (!is_end_of_line[(int) **pp]) {
     
         if (report_line) {
-            report_line_at (get_filename (), get_line_number (), REPORT_WARNING, start, *pp, "extra tokens at end of %%undef directive");
+            report_line_at (filename, line_number, REPORT_WARNING, start, *pp, "extra tokens at end of %%undef directive");
         } else {
-            report_at (get_filename (), get_line_number (), REPORT_WARNING, "extra tokens at end of %%undef directive");
+            report_at (filename, line_number, REPORT_WARNING, "extra tokens at end of %%undef directive");
         }
     
     }
@@ -323,6 +331,10 @@ static struct vector *get_macro_args (char *start, char *macro_name, char **pp) 
 
     static struct vector args_list = { 0 };
     char *arg, saved_ch, ch;
+    
+    const char *filename;
+    unsigned long line_number;
+    get_filename_and_line_number (&filename, &line_number);
     
     memset (&args_list, 0, sizeof (args_list));
     
@@ -367,7 +379,7 @@ static struct vector *get_macro_args (char *start, char *macro_name, char **pp) 
                 if (**pp == ch) {
                     (*pp)++;
                 } else {
-                    report_line_at (get_filename (), get_line_number (), REPORT_WARNING, start, arg, "missing terminating %c character", ch);
+                    report_line_at (filename, line_number, REPORT_WARNING, start, arg, "missing terminating %c character", ch);
                 }
             
             } else {
@@ -399,7 +411,7 @@ static struct vector *get_macro_args (char *start, char *macro_name, char **pp) 
         
         if (**pp != ')') {
         
-            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, *pp, "unterminated argument list invoking macro \"%s\"", macro_name);
+            report_line_at (filename, line_number, REPORT_ERROR, start, *pp, "unterminated argument list invoking macro \"%s\"", macro_name);
             return 0;
         
         }
@@ -487,6 +499,10 @@ char *process_macro (char *start, char **pp, struct macro *m) {
     struct vector *args_list;
     char *caret;
     
+    const char *filename;
+    unsigned long line_number;
+    get_filename_and_line_number (&filename, &line_number);
+    
     if (m->nargs > 0 || m->is_variadic) {
     
         args_list = 0;
@@ -499,7 +515,7 @@ char *process_macro (char *start, char **pp, struct macro *m) {
                 char *tmp = (m->nargs == 1 ? " argument" : " arguments");
                 char *tmp2 = (args_list->length == 1 ? "only " : "");
                 
-                report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "macro \"%s\" requires %d%s, but %s%d given", m->name, m->nargs, tmp, tmp2, args_list->length);
+                report_line_at (filename, line_number, REPORT_ERROR, start, caret, "macro \"%s\" requires %d%s, but %s%d given", m->name, m->nargs, tmp, tmp2, args_list->length);
             
             } else if (args_list->length > m->nargs) {
             
@@ -508,7 +524,7 @@ char *process_macro (char *start, char **pp, struct macro *m) {
                     char *tmp = (args_list->length == 1 ? " argument" : " arguments");
                     char *tmp2 = (m->nargs == 1 ? "just " : "");
                     
-                    report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "macro \"%s\" passed %d%s, but takes %s%d", m->name, args_list->length, tmp, tmp2, m->nargs);
+                    report_line_at (filename, line_number, REPORT_ERROR, start, caret, "macro \"%s\" passed %d%s, but takes %s%d", m->name, args_list->length, tmp, tmp2, m->nargs);
                 
                 }
             
