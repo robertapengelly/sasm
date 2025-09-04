@@ -19,7 +19,7 @@ typedef     signed long long            int64_t;
 typedef     unsigned long long          uint64_t;
 #endif
 
-endif       /* _STDINT_H_ */
+#endif      /* _STDINT_H_ */
 #endif      /* _STDINT_H */
 #endif      /* _STDINT_H_INCLUDED */
 
