@@ -93,6 +93,11 @@ static int read_character (const char *start, char **pp, unsigned long *val) {
                     *val = 10;
                     break;
                 
+                case 't':
+                
+                    *val = 9;
+                    break;
+                
                 case '\\':
                 case '"':
                 
