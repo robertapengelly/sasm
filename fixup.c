@@ -540,7 +540,7 @@ static unsigned long fixup_section (struct section *section) {
             if ((add_number & mask) && (fixup->fixup_signed ? ((add_number & mask) != mask) : (-add_number & mask))) {
             
                 report_at (0, 0, REPORT_ERROR, (add_number > 1000) ?
-                    "value of %#"PRIx64"too large for field of %u byte%s at %#lx" : "value of %"PRIu64" too large for field of %u byte%s at %#lx",
+                    "value of %#"PRIx64" too large for field of %u byte%s at %#lx" : "value of %"PRIu64" too large for field of %u byte%s at %#lx",
                         add_number, fixup->size, ((fixup->size == 1) ? "" : "s"), fixup->frag->address + fixup->where);
             
             }
