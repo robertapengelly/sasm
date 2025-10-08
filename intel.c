@@ -66,11 +66,6 @@ static struct operand_type operand_type_and (struct operand_type a, struct opera
 
 }
 
-#ifdef __CC64__
-struct operand_type temp;
-# define operand_type_and(a, b) (operand_type_and)(temp = (a), (b))
-#endif
-
 static int operand_type_equal (const struct operand_type *pa, const struct operand_type *pb) {
     return !memcmp (pa, pb, sizeof (*pa));
 }
@@ -3073,12 +3068,7 @@ static int intel_parse_operand (char *start, char *operand_string) {
     if (*operand_string) {
     
         report_at (get_filename (), get_line_number (), REPORT_ERROR, "junk '%s' after expression", operand_string);
-#ifdef __CC64__
-        ret = 1;
-        goto ret1;
-#else
         return 1;
-#endif
     
     } else if (!intel_state.has_offset && operand_string > operand_start && strrchr (operand_start, ']') && skip_whitespace (strrchr (operand_start, ']') + 1) == operand_string) {
     
@@ -3087,15 +3077,7 @@ static int intel_parse_operand (char *start, char *operand_string) {
     
     }
     
-#ifdef __CC64__
-    if (!ret)
-    {
-        ret = 1;
-        goto ret1;
-    }
-#else
     if (!ret) { return 1; }
-#endif
     ret = 0;
     
     if (intel_state.operand_modifier != EXPR_TYPE_ABSENT && current_templates->start->base_opcode != 0x8D /* lea */) {
@@ -3205,12 +3187,8 @@ static int intel_parse_operand (char *start, char *operand_string) {
         } else if (instruction.suffix != suffix) {
         
             report_at (get_filename (), get_line_number (), REPORT_ERROR, "conficting operand size modifiers");
-#ifdef __CC64__
-            ret = 1;
-            goto ret1;
-#else
             return 1;
-#endif
+        
         }
     
     }
@@ -3253,12 +3231,8 @@ static int intel_parse_operand (char *start, char *operand_string) {
                         }
                         
                         report_at (get_filename (), get_line_number (), REPORT_ERROR, "cannot infer the segment part of the operand");
-#ifdef __CC64__
-                        ret = 1;
-                        goto ret1;
-#else
                         return 1;
-#endif
+                    
                     } else if (symbol_get_section (intel_state.segment) == reg_section) {
                         is_absolute_jump = 1;
                     } else {
@@ -3273,12 +3247,7 @@ static int intel_parse_operand (char *start, char *operand_string) {
                         resolve_expression (instruction.imms[instruction.operands]);
                         
                         if (finalize_immediate (instruction.imms[instruction.operands], operand_start)) {
-#ifdef __CC64__
-                            ret = 1;
-                            goto ret1;
-#else
                             return 1;
-#endif
                         }
                         
                         instruction.operands++;
@@ -3348,14 +3317,9 @@ static int intel_parse_operand (char *start, char *operand_string) {
                         
                         instruction.operands = 2;
                         instruction.types[0] = operand_type_and_not_disp (instruction.types[0]);
-
-#ifdef __CC64__
-                        ret = 0;
-                        goto ret1;
-#else
+                        
                         return 0;
-#endif
-
+                    
                     }
                 
                 }
@@ -3363,12 +3327,8 @@ static int intel_parse_operand (char *start, char *operand_string) {
             }
             
             report_at (get_filename (), get_line_number (), REPORT_ERROR, "too many memory references for '%s'", current_templates->name);
-#ifdef __CC64__
-            ret = 1;
-            goto ret1;
-#else
             return 1;
-#endif
+        
         }
         
         if (intel_state.base_reg && intel_state.index_reg && intel_state.base_reg->type.word && intel_state.index_reg->type.word && intel_state.base_reg->number >= 6 && intel_state.index_reg->number < 6) {
@@ -3410,12 +3370,7 @@ static int intel_parse_operand (char *start, char *operand_string) {
             }
             
             if (finalize_displacement (instruction.disps[instruction.operands], operand_start)) {
-#ifdef __CC64__
-                ret = 1;
-                goto ret1;
-#else
                 return 1;
-#endif
             }
         
         }
@@ -3440,23 +3395,15 @@ static int intel_parse_operand (char *start, char *operand_string) {
             if (expr->type != EXPR_TYPE_REGISTER) {
             
                 report_at (get_filename (), get_line_number (), REPORT_ERROR, "segment register name expected");
-#ifdef __CC64__
-                ret = 1;
-                goto ret1;
-#else
                 return 1;
-#endif
+            
             }
             
             if (!reg_table[expr->add_number].type.segment1 && !reg_table[expr->add_number].type.segment2) {
             
                 report_at (get_filename (), get_line_number (), REPORT_ERROR, "invalid use of register");
-#ifdef __CC64__
-                ret = 1;
-                goto ret1;
-#else
                 return 1;
-#endif
+            
             }
             
             if (more_than_1_segment) {
@@ -3472,12 +3419,7 @@ static int intel_parse_operand (char *start, char *operand_string) {
         }
         
         if (base_index_check (operand_start)) {
-#ifdef __CC64__
-            ret = 1;
-            goto ret1;
-#else
             return 1;
-#endif
         }
         
         instruction.mem_operands++;
@@ -3493,11 +3435,6 @@ static int intel_parse_operand (char *start, char *operand_string) {
     }
     
     instruction.operands++;
-
-#ifdef __CC64__
-ret1:
-#endif
-
     return ret;
 
 }
