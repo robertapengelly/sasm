@@ -198,12 +198,28 @@ static void align_bytes (char *start, char **pp, int first_arg_is_bytes) {
 
 void machine_dependent_number_to_chars (unsigned char *p, uint64_t number, unsigned int size);
 
+unsigned long array_to_integer (unsigned char *arr, int size) {
+
+    unsigned long value = 0;
+    int i;
+    
+    for (i = 0; i < size; i++) {
+        value |= (unsigned long) arr[i] << (CHAR_BIT * i);
+    }
+    
+    return value;
+
+}
+
 static void handle_constant (char *start, char **pp, int size) {
 
     struct expr expr, val;
     
+    signed long count = 0, repeat, i;
+    unsigned long val2;
+    
+    unsigned char *buf;
     char *temp, *arg;
-    signed long repeat;
     
     while (1) {
     
@@ -246,63 +262,143 @@ static void handle_constant (char *start, char **pp, int size) {
                     }
                     
                     *pp = skip_whitespace (*pp);
-                    machine_dependent_simplified_expression_read_into (start, pp, &val);
                     
-                    if (val.type != EXPR_TYPE_CONSTANT) {
+                    if (**pp != '(') {
                     
-                        report_at (get_filename (), get_line_number (), REPORT_ERROR, "invalid value for dup");
+                        report_at (get_filename (), get_line_number (), REPORT_ERROR, "expected '(' after dup");
                         
                         ignore_rest_of_line (pp);
                         return;
                     
                     }
                     
-                    if (val.add_number != 0 && current_section == bss_section) {
-                    
-                        report_at (get_filename (), get_line_number (), REPORT_WARNING, "attempt to initialize memory in a nobits section; ignored");
-                        val.add_number = 0;
-                    
-                    }
-                    
-                    if (val.add_number > 0xff) {
-                    
-                        report_at (get_filename (), get_line_number (), REPORT_WARNING, "dup value %lu truncated to %lu", val.add_number, val.add_number & 0xff);
-                        val.add_number &= 0xff;
-                    
-                    }
-                    
                     if (expr.type == EXPR_TYPE_CONSTANT) {
                     
-                        repeat = expr.add_number * size;
+                        repeat = expr.add_number;
                         
                         if (repeat == 0) {
                         
                             report_at (get_filename (), get_line_number (), REPORT_WARNING, "dup repeat count is zero; ignored");
-                            goto next;
+                            
+                            ignore_rest_of_line (pp);
+                            return;
                         
                         }
                         
                         if (repeat < 0) {
                         
-                            report_at (get_filename (), get_line_number (), REPORT_WARNING, "dup repeate count is negative; ignored");
-                            goto next;
+                            report_at (get_filename (), get_line_number (), REPORT_WARNING, "dup repeat count is negative; ignored");
+                            
+                            ignore_rest_of_line (pp);
+                            return;
                         
                         }
                         
-                        memset (frag_increase_fixed_size (repeat), val.add_number, repeat);
+                        (*pp)++;
+                        
+                        for (;;) {
+                        
+                            *pp = skip_whitespace (*pp);
+                            
+                            if (is_end_of_line[(int) **pp]) {
+                                break;
+                            }
+                            
+                            machine_dependent_simplified_expression_read_into (start, pp, &val);
+                            count += size;
+                            
+                            if (val.type != EXPR_TYPE_CONSTANT) {
+                            
+                                report_at (get_filename (), get_line_number (), REPORT_ERROR, "invalid value for dup");
+                                
+                                ignore_rest_of_line (pp);
+                                return;
+                            
+                            }
+                            
+                            if (val.add_number != 0 && current_section == bss_section) {
+                            
+                                report_at (get_filename (), get_line_number (), REPORT_WARNING, "attempt to initialize memory in a nobits section; ignored");
+                                val.add_number = 0;
+                            
+                            }
+                            
+                            if (val.add_number > 0xff) {
+                            
+                                report_at (get_filename (), get_line_number (), REPORT_WARNING, "dup value %lu truncated to %lu", val.add_number, val.add_number & 0xff);
+                                val.add_number &= 0xff;
+                            
+                            }
+                            
+                            machine_dependent_number_to_chars (frag_increase_fixed_size (size), val.add_number, size);
+                            
+                            if (*(*pp = skip_whitespace (*pp)) != ',') {
+                                break;
+                            }
+                            
+                            (*pp)++;
+                        
+                        }
+                        
+                        if (**pp != ')') {
+                            report_at (get_filename (), get_line_number (), REPORT_ERROR, "expected ')'");
+                        } else {
+                            (*pp)++;
+                        }
+                        
+                        for (; repeat > 1; repeat--) {
+                        
+                            buf = current_frag->buf + current_frag->fixed_size;
+                            
+                            for (i = 0; i < count; i += size) {
+                            
+                                val2 = array_to_integer (buf - count + i, size);
+                                machine_dependent_number_to_chars (frag_increase_fixed_size (size), val2, size);
+                            
+                            }
+                        
+                        }
+                        
+                        *pp = skip_whitespace (*pp);
                     
                     } else {
                     
                         struct symbol *expr_symbol = make_expr_symbol (&expr);
                         
                         unsigned char *p = frag_alloc_space (symbol_get_value (expr_symbol));
-                        *p = val.add_number;
+                        *pp = skip_whitespace (*pp);
                         
+                        machine_dependent_simplified_expression_read_into (start, pp, &val);
+                        
+                        if (val.type != EXPR_TYPE_CONSTANT) {
+                        
+                            report_at (get_filename (), get_line_number (), REPORT_ERROR, "invalid value for dup");
+                            
+                            ignore_rest_of_line (pp);
+                            return;
+                        
+                        }
+                        
+                        if (val.add_number != 0 && current_section == bss_section) {
+                        
+                            report_at (get_filename (), get_line_number (), REPORT_WARNING, "attempt to initialize memory in a nobits section; ignored");
+                            val.add_number = 0;
+                        
+                        }
+                        
+                        if (val.add_number > 0xff) {
+                        
+                            report_at (get_filename (), get_line_number (), REPORT_WARNING, "dup value %lu truncated to %lu", val.add_number, val.add_number & 0xff);
+                            val.add_number &= 0xff;
+                        
+                        }
+                        
+                        *p = val.add_number;
                         frag_set_as_variant (RELAX_TYPE_SPACE, 0, expr_symbol, 0, 0);
                     
                     }
                     
-                    goto next;
+                    return;
                 
                 }
                 
@@ -327,8 +423,6 @@ static void handle_constant (char *start, char **pp, int size) {
             }
         
         }
-        
-    next:
         
         *pp = skip_whitespace (*pp);
         
