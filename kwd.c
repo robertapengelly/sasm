@@ -305,7 +305,6 @@ static void handle_constant (char *start, char **pp, int size) {
                             }
                             
                             machine_dependent_simplified_expression_read_into (start, pp, &val);
-                            count += size;
                             
                             if (val.type != EXPR_TYPE_CONSTANT) {
                             
@@ -331,6 +330,7 @@ static void handle_constant (char *start, char **pp, int size) {
                             }
                             
                             machine_dependent_number_to_chars (frag_increase_fixed_size (size), val.add_number, size);
+                            count += size;
                             
                             if (*(*pp = skip_whitespace (*pp)) != ',') {
                                 break;
@@ -346,14 +346,18 @@ static void handle_constant (char *start, char **pp, int size) {
                             (*pp)++;
                         }
                         
+                        buf = current_frag->buf + current_frag->fixed_size - count;
+                        
                         for (; repeat > 1; repeat--) {
                         
-                            buf = current_frag->buf + current_frag->fixed_size;
-                            
                             for (i = 0; i < count; i += size) {
                             
-                                val2 = array_to_integer (buf - count + i, size);
-                                machine_dependent_number_to_chars (frag_increase_fixed_size (size), val2, size);
+                                val2 = array_to_integer (buf + i, size);
+                                
+                                buf = frag_increase_fixed_size (size);
+                                machine_dependent_number_to_chars (buf, val2, size);
+                                
+                                buf -= (count + i);
                             
                             }
                         
