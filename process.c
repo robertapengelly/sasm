@@ -141,6 +141,13 @@ static char *preprocess_line (char *src, int in_macro) {
             
             }
             
+            if (xstrcasecmp (sname, "DGROUP") == 0 && *caret == ':') {
+            
+                caret++;
+                continue;
+            
+            }
+            
             cstr_cat (&cstr, start, caret - start);
             continue;
         
@@ -922,6 +929,7 @@ static void handle_org (char *start, char **pp) {
 }
 
 extern void machine_dependent_assemble_line (char *start, char *line);
+extern void machine_dependent_handle_label (char *start, char **line);
 
 extern void machine_dependent_handle_proc (char *start, char **pp, char *name);
 extern void machine_dependent_handle_endp (char *start, char *name);
@@ -1107,6 +1115,18 @@ static void process_line (char *line, char *line_end) {
                         assign_symbol (start, &line, arg);
                         
                         free (directive);
+                        goto check;
+                    
+                    }
+                    
+                    if (xstrcasecmp (directive, "label") == 0) {
+                    
+                        symbol = symbol_label (start, caret, arg);
+                        symbol->scope = SYMBOL_SCOPE_LOCAL;
+                        
+                        free (directive);
+                        
+                        ignore_rest_of_line (&line);
                         goto check;
                     
                     }

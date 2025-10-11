@@ -2,6 +2,7 @@
  * @file            kwd.c
  *****************************************************************************/
 #include    <ctype.h>
+#include    <limits.h>
 #include    <stdlib.h>
 #include    <string.h>
 
@@ -198,7 +199,7 @@ static void align_bytes (char *start, char **pp, int first_arg_is_bytes) {
 
 void machine_dependent_number_to_chars (unsigned char *p, uint64_t number, unsigned int size);
 
-unsigned long array_to_integer (unsigned char *arr, int size) {
+static unsigned long array_to_integer (unsigned char *arr, int size) {
 
     unsigned long value = 0;
     int i;

@@ -2185,14 +2185,13 @@ static struct pseudo_op_entry pseudo_op_table[] = {
 
 void machine_dependent_init (void) {
 
+    struct template *template = template_table;
     struct hashtab_name *key;
     
     struct reg_entry *reg_entry;
     struct templates *templates;
     
-    struct template *template = template_table;
     struct model_entry *model_entry;
-    
     int ch;
     
     templates = xmalloc (sizeof (*templates));
@@ -2421,7 +2420,19 @@ void machine_dependent_handle_segment (char *start, char **pp, char *name) {
             break;
         }
         
-        if (xstrcasecmp (arg, "use16") == 0) {
+        if (xstrcasecmp (arg, "byte") == 0) {
+        
+            /* TODO: Figure out what needs to be done. */
+        
+        } else if (xstrcasecmp (arg, "word") == 0) {
+        
+            /* TODO: Figure out what needs to be done. */
+        
+        } else if (xstrcasecmp (arg, "public") == 0) {
+        
+            /* TODO: Figure out what needs to be done. */
+        
+        } else if (xstrcasecmp (arg, "use16") == 0) {
         
             machine_dependent_set_march ("i8086+8087");
             bits = 16;
@@ -2431,11 +2442,11 @@ void machine_dependent_handle_segment (char *start, char **pp, char *name) {
             machine_dependent_set_march ("i386+387");
             bits = 32;
         
-        } else if (xstrcasecmp (arg, "code")) {
+        } else if (xstrcasecmp (arg, "code") == 0) {
             section_set_by_name (".text");
-        } else if (xstrcasecmp (arg, "data")) {
+        } else if (xstrcasecmp (arg, "data") == 0) {
             section_set_by_name (".data");
-        } else if (xstrcasecmp (arg, "bss")) {
+        } else if (xstrcasecmp (arg, "bss") == 0) {
             section_set_by_name (".bss");
         } else {
         
