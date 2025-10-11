@@ -929,7 +929,6 @@ static void handle_org (char *start, char **pp) {
 }
 
 extern void machine_dependent_assemble_line (char *start, char *line);
-extern void machine_dependent_handle_label (char *start, char **line);
 
 extern void machine_dependent_handle_proc (char *start, char **pp, char *name);
 extern void machine_dependent_handle_endp (char *start, char *name);
