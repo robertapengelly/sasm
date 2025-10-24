@@ -3214,7 +3214,7 @@ static int intel_parse_operand (char *start, char *operand_string) {
         
             switch (intel_state.operand_modifier) {
             
-                case EXPR_TYPE_NEAR_PTR:
+                case EXPR_TYPE_NEAR_PTR:    case EXPR_TYPE_FAR_PTR:
                 
                     if (intel_state.segment) {
                         is_absolute_jump = 1;
@@ -3224,7 +3224,6 @@ static int intel_parse_operand (char *start, char *operand_string) {
                     
                     break;
                 
-                case EXPR_TYPE_FAR_PTR:
                 case EXPR_TYPE_ABSENT:
                 
                     if (!intel_state.segment) {
