@@ -16,7 +16,6 @@
 struct as_state *state = 0;
 const char *program_name = 0;
 
-extern void output_binary (FILE *fp);
 extern void output_coff (FILE *fp);
 extern void output_elks (FILE *fp);
 

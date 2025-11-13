@@ -293,7 +293,7 @@ void output_coff (FILE *outfile) {
     
         struct symbol_table_entry sym_tbl_ent;
         
-        unsigned long value = symbol_get_value (symbol);
+        unsigned long value = symbol_get_value (symbol), name_length = 0;
         unsigned int section_number = 0;
         
         memset (&sym_tbl_ent, 0, sizeof (sym_tbl_ent));
@@ -309,7 +309,10 @@ void output_coff (FILE *outfile) {
         write_to_byte_array (sym_tbl_ent.Type, (IMAGE_SYM_DTYPE_NULL << 8) | IMAGE_SYM_TYPE_NULL, 2);
         
         if (symbol_is_external (symbol) || symbol_is_undefined (symbol)) {
+        
+            if (state->ext) { name_length = strlen (state->ext); }
             sym_tbl_ent.StorageClass[0] = IMAGE_SYM_CLASS_EXTERNAL;
+        
         } else if (symbol_is_section_symbol (symbol)) {
             sym_tbl_ent.StorageClass[0] = IMAGE_SYM_CLASS_STATIC;
         } else if (symbol_get_section (symbol) == text_section) {
@@ -324,8 +327,27 @@ void output_coff (FILE *outfile) {
         write_to_byte_array (sym_tbl_ent.SectionNumber, section_number, 2);
         symbol->write_name_to_string_table = 0;
         
-        if (strlen (symbol->name) <= 8) {
-            memcpy (sym_tbl_ent.Name, symbol->name, strlen (symbol->name));
+        name_length += strlen (symbol->name);
+        
+        if (name_length <= 8) {
+        
+            if (symbol_is_external (symbol) || symbol_is_undefined (symbol)) {
+            
+                if (state->ext) {
+                
+                    name_length = strlen (state->ext);
+                    memcpy (sym_tbl_ent.Name, state->ext, name_length);
+                
+                } else {
+                    name_length = 0;
+                }
+                
+                memcpy (sym_tbl_ent.Name + name_length, symbol->name, strlen (symbol->name));
+            
+            } else {
+                memcpy (sym_tbl_ent.Name, symbol->name, name_length);
+            }
+        
         } else {
         
             memset (sym_tbl_ent.Name, 0, 4);
@@ -378,9 +400,24 @@ void output_coff (FILE *outfile) {
     
         if (symbol->write_name_to_string_table) {
         
+            if (symbol_is_external (symbol) || symbol_is_undefined (symbol)) {
+            
+                if (state->ext) {
+                
+                    if (fwrite (state->ext, strlen (state->ext), 1, outfile) != 1) {
+                    
+                        report_at (program_name, 0, REPORT_ERROR, "failed to write string table");
+                        return;
+                    
+                    }
+                
+                }
+            
+            }
+            
             if (fwrite (symbol->name, strlen (symbol->name) + 1, 1, outfile) != 1) {
             
-                report_at (NULL, 0, REPORT_ERROR, "failed to write string table!");
+                report_at (NULL, 0, REPORT_ERROR, "failed to write string table");
                 return;
             
             }

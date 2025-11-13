@@ -1822,6 +1822,15 @@ static void machine_dependent_set_bits (int new_bits, int cause_fatal_error) {
 }
 
 
+static void handler_amd64 (char *start, char **pp) {
+
+    (void) start;
+    (void) pp;
+    
+    machine_dependent_set_march ("generic64");
+
+}
+
 static void handler_8086 (char *start, char **pp) {
 
     (void) start;
@@ -2152,6 +2161,8 @@ static void handler_option (char *start, char **pp) {
 
 static struct pseudo_op_entry pseudo_op_table[] = {
 
+    {   ".amd64",       &handler_amd64      },
+    
     {   ".8086",        &handler_8086       },
     {   ".8087",        &handler_8087       },
     
