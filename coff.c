@@ -353,7 +353,7 @@ void output_coff (FILE *outfile) {
             memset (sym_tbl_ent.Name, 0, 4);
             
             write_to_byte_array ((unsigned char *) sym_tbl_ent.Name + 4, string_table_size, 4);
-            string_table_size += strlen (symbol->name) + 1;
+            string_table_size += name_length + 1;
             
             symbol->write_name_to_string_table = 1;
         
