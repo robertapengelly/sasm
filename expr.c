@@ -349,7 +349,7 @@ static struct section *operand (char *start, char **pp, struct expr *expr, int e
     
         temp = (*pp);
         
-        while (*temp && isxdigit (*temp)) {
+        while (*temp && isxdigit ((int) *temp)) {
             temp++;
         }
         
