@@ -334,6 +334,7 @@ static struct template template_table[] = {
     { "mov", 0x0F21, NONE, 2, { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 }, { 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0 }, { { 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1 } } },
     { "mov", 0x0F21, NONE, 2, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, { 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0 }, { { 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1 } } },
     { "mov", 0x0F24, NONE, 2, { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 }, { 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0 }, { { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1 } } },
+    { "mov", 0xB8, NONE, 2, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0 }, { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 } } },
     
     /* 64-bit only moves. */
     { "movabs", 0xA0, NONE, 2, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0 }, { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0 } } },
@@ -1541,6 +1542,10 @@ static struct model_entry *find_model_entry (char *name) {
 #define     EXPR_TYPE_DWORD_PTR         EXPR_TYPE_MACHINE_DEPENDENT_7
 #define     EXPR_TYPE_FWORD_PTR         EXPR_TYPE_MACHINE_DEPENDENT_8
 #define     EXPR_TYPE_QWORD_PTR         EXPR_TYPE_MACHINE_DEPENDENT_9
+#define     EXPR_TYPE_TBYTE_PTR         EXPR_TYPE_MACHINE_DEPENDENT_10
+
+#define     EXPR_TYPE_XMMWORD_PTR       EXPR_TYPE_MACHINE_DEPENDENT_11
+#define     EXPR_TYPE_OWORD_PTR         EXPR_TYPE_MACHINE_DEPENDENT_12
 
 struct modrm_byte {
 
@@ -1979,7 +1984,7 @@ static void handler_extern (char *start, char **pp) {
             
             *pp = skip_whitespace (*pp);
             
-            if (xstrcasecmp (qualifier, "byte") && xstrcasecmp (qualifier, "word") && xstrcasecmp (qualifier, "dword")) {
+            if (xstrcasecmp (qualifier, "byte") && xstrcasecmp (qualifier, "word") && xstrcasecmp (qualifier, "dword") && xstrcasecmp (qualifier, "proc")) {
             
                 free (qualifier);
                 goto error;
@@ -2093,6 +2098,14 @@ static void handler_option (char *start, char **pp) {
             ignore_rest_of_line (pp);
             break;
         
+        }
+        
+        if (xstrcasecmp (arg, "nokeyword") == 0 || xstrcasecmp (arg, "casemap") == 0) {
+        
+            free (arg);
+            
+            ignore_rest_of_line (pp);
+            return;
         }
         
         if (xstrcasecmp (arg, "segment") == 0) {
@@ -3198,6 +3211,21 @@ static int intel_parse_operand (char *start, char *operand_string) {
                 
                 break;
             
+            case EXPR_TYPE_TBYTE_PTR:
+            
+                instruction.types[instruction.operands].tbyte = 1;
+                
+                if (intel_float_suffix_translation (current_templates->name) == 1) {
+                    suffix = INTEL_SUFFIX;
+                }
+                
+                break;
+            
+            case EXPR_TYPE_OWORD_PTR:     case EXPR_TYPE_XMMWORD_PTR:
+            
+                instruction.types[instruction.operands].xmmword = 1;
+                break;
+            
             default:
             
                 break;
@@ -3740,6 +3768,9 @@ static int intel_simplify_expr (struct expr *expr) {
         case EXPR_TYPE_DWORD_PTR:
         case EXPR_TYPE_FWORD_PTR:
         case EXPR_TYPE_QWORD_PTR:
+        case EXPR_TYPE_TBYTE_PTR:
+        case EXPR_TYPE_XMMWORD_PTR:
+        case EXPR_TYPE_OWORD_PTR:
         case EXPR_TYPE_NEAR_PTR:
         case EXPR_TYPE_FAR_PTR:
         
@@ -3887,6 +3918,9 @@ static const struct intel_type intel_types[] = {
     INTEL_TYPE (DWORD, 4),
     INTEL_TYPE (FWORD, 6),
     INTEL_TYPE (QWORD, 8),
+    INTEL_TYPE (TBYTE, 8),
+    INTEL_TYPE (XMMWORD, 16),
+    INTEL_TYPE (OWORD, 16),
     
     {   "near",     EXPR_TYPE_NEAR_PTR,     { 0xFF02, 0xFF04 }  },
     {   "far",      EXPR_TYPE_FAR_PTR,      { 0xFF05, 0xFF06 }  },

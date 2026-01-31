@@ -578,6 +578,10 @@ static void handler_word (char *start, char **pp) {
     handle_constant (start, pp, 2);
 }
 
+static void handler_qword (char *start, char **pp) {
+    handle_constant (start, pp, 8);
+}
+
 static struct pseudo_op_entry pseudo_op_table[] = {
 
     {   ".code",        &handler_text           },
@@ -601,6 +605,7 @@ static struct pseudo_op_entry data_pseudo_op_table[] = {
     {   "db",           &handler_byte           },
     {   "dd",           &handler_long           },
     {   "dw",           &handler_word           },
+    {   "dq",           &handler_qword          },
     
     {   0,              0                       }
 
