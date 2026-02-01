@@ -50,7 +50,7 @@ struct as_state {
     char *ext;
     
     struct symbol *end_symbol;
-    int format;
+    int format, verbose;
 
 };
 

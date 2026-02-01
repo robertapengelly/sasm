@@ -34,6 +34,7 @@ struct as_option {
 #define     AS_OPTION_LISTING           5
 #define     AS_OPTION_OUTFILE           6
 #define     AS_OPTION_UNDEF             7
+#define     AS_OPTION_VERBOSE           8
 
 static struct as_option opts[] = {
 
@@ -44,6 +45,7 @@ static struct as_option opts[] = {
     {   "-f",           AS_OPTION_FORMAT,       AS_OPTION_HAS_ARG   },
     {   "-l",           AS_OPTION_LISTING,      AS_OPTION_HAS_ARG   },
     {   "-o",           AS_OPTION_OUTFILE,      AS_OPTION_HAS_ARG   },
+    {   "-v",           AS_OPTION_VERBOSE,      AS_OPTION_NO_ARG    },
     
     {   "--help",       AS_OPTION_HELP,         AS_OPTION_NO_ARG    },
     {   0,              0,                      0                   }
@@ -492,6 +494,13 @@ void parse_args (int argc, char **argv, int optind) {
                 sprintf (arg, "-U%s", optarg);
                 
                 list_append (&state->pplist, arg);
+                break;
+            
+            }
+            
+            case AS_OPTION_VERBOSE: {
+            
+                state->verbose++;
                 break;
             
             }

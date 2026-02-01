@@ -137,6 +137,7 @@ static char *preprocess_line (char *src, int in_macro) {
                 
                 }
                 
+                free (sname);
                 continue;
             
             }
@@ -144,11 +145,15 @@ static char *preprocess_line (char *src, int in_macro) {
             if (xstrcasecmp (sname, "DGROUP") == 0 && *caret == ':') {
             
                 caret++;
+                
+                free (sname);
                 continue;
             
             }
             
             cstr_cat (&cstr, start, caret - start);
+            
+            free (sname);
             continue;
         
         }
@@ -1204,8 +1209,8 @@ void process_file (const char *ifile) {
     char *line, *line_end, *real_line;
     unsigned long real_line_len;
     
+    unsigned long new_line_number = 1;
     unsigned long newlines;
-    unsigned long new_line_number;
     
     struct pp_pseudo_op_entry *poe;
     void *load_line_internal_data = NULL;
@@ -1231,7 +1236,6 @@ void process_file (const char *ifile) {
     
     }
     
-    new_line_number = 1;
     load_line_internal_data = load_line_create_internal_data (&new_line_number);
     
     while (!load_line (&line, &line_end, &real_line, &real_line_len, &newlines, fp, &load_line_internal_data)) {
@@ -1247,6 +1251,11 @@ void process_file (const char *ifile) {
         }
         
         start = line;
+        
+        if (state->verbose) {
+            printf ("%s:%lu: %.*s", get_filename (), get_line_number (), (int) real_line_len, real_line);
+        }
+        
         caret = (line = skip_whitespace (line));
         
         if (!ignore_line && line >= line_end) {
@@ -1269,8 +1278,8 @@ void process_file (const char *ifile) {
                 if ((poe = find_cond_directive (arg))) {
                 
                     poe->handler (start, &line);
-                    free (arg);
                     
+                    free (arg);
                     continue;
                 
                 }
@@ -1280,8 +1289,8 @@ void process_file (const char *ifile) {
                     if ((poe = find_directive (arg))) {
                     
                         poe->handler (start, &line);
-                        free (arg);
                         
+                        free (arg);
                         continue;
                     
                     }
@@ -1317,6 +1326,8 @@ void process_file (const char *ifile) {
                     continue;
                 
                 }
+                
+                free (arg);
             
             }
             
@@ -1329,9 +1340,7 @@ void process_file (const char *ifile) {
             if (line < line_end) {
             
                 char *tokenized_line = preprocess_line (line, 0);
-                
                 process_line (tokenized_line, tokenized_line + strlen (tokenized_line));
-                free (tokenized_line);
             
             }
         
