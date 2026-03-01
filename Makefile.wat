@@ -10,7 +10,7 @@ all: sasm.exe
 
 sasm.exe: $(SRC)
 
-	wcl -DNO_LONG_LONG -fe=$@ $^
+	wcl -fe=$@ -ml $^
 
 clean:
 
