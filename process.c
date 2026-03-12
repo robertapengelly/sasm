@@ -24,6 +24,8 @@
 #include    "symbol.h"
 #include    "vector.h"
 
+static struct hashtab hashtab_seen_macros = { 0 };
+
 static char *preprocess_line (char *src, int in_macro) {
 
     struct cstring cstr;
@@ -100,45 +102,30 @@ static char *preprocess_line (char *src, int in_macro) {
         
             sname = symname (&caret);
             
-            if ((key = find_macro (sname))) {
+            if (!(key = hashtab_get_key (&hashtab_seen_macros, sname))) {
             
-                if ((m = get_macro (key))) {
+                if ((key = find_macro (sname))) {
                 
                     char *pm;
-                    int spaces = 0;
                     
-                    if (*caret == ' ' || *caret == '\t') {
+                    caret = skip_whitespace (caret);
+                    hashtab_put (&hashtab_seen_macros, key, sname);
                     
-                        cstr_ccat (&cstr, ' ');
-                        
-                        while (*caret == ' ' || *caret == '\t') {
-                        
-                            spaces++;
-                            caret++;
-                        
-                        }
+                    if ((m = get_macro (key))) {
                     
-                    }
-                    
-                    if ((pm = process_macro (start, &caret, m))) {
-                    
-                        char *temp = preprocess_line (pm, 1);
-                        cstr_cat (&cstr, temp, strlen (temp));
+                        if ((pm = process_macro (start, &caret, m))) {
                         
-                        if (!is_end_of_line[(int) *pm]) {
-                        
-                            while (spaces--) {
-                                cstr_ccat (&cstr, ' ');
-                            }
+                            char *temp = preprocess_line (pm, 1);
+                            cstr_cat (&cstr, temp, strlen (temp));
                         
                         }
                     
                     }
+                    
+                    hashtab_remove (&hashtab_seen_macros, key);
+                    continue;
                 
                 }
-                
-                free (sname);
-                continue;
             
             }
             
@@ -151,9 +138,9 @@ static char *preprocess_line (char *src, int in_macro) {
             
             }
             
-            cstr_cat (&cstr, start, caret - start);
-            
             free (sname);
+            
+            cstr_cat (&cstr, start, caret - start);
             continue;
         
         }

@@ -432,14 +432,17 @@ static char *process_value (struct macro *m, struct vector *args_list) {
     struct cstring str;
     cstr_new (&str);
     
+again:
+    
     while (!is_end_of_line[(int) *line]) {
-    again:
     
         if (line[0] == '#' && line[1] == '#') {
         
-            if (str.size && ((char *) str.data)[str.size - 1] == ' ') { str.size--; }
+            while (str.size && ((char *) str.data)[str.size - 1] == ' ') {
+                str.size--;
+            }
             
-            line += 2;
+            line = skip_whitespace (line + 2);
             continue;
         
         }
@@ -484,7 +487,10 @@ static char *process_value (struct macro *m, struct vector *args_list) {
             cstr_cat (&str, arg, strlen (arg));
         
         } else {
-            cstr_ccat (&str, *line++);
+        
+            cstr_ccat (&str, *line);
+            line++;
+        
         }
     
     }
