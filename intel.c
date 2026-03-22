@@ -2034,7 +2034,10 @@ static void handler_model (char *start, char **pp) {
         state->model = 7;
         
         if (cpu_arch_flags.cpu_386) {
+        
+            machine_dependent_set_march ("i386+387");
             machine_dependent_set_bits (32, 1);
+        
         }
     
     } else {
