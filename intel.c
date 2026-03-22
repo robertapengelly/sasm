@@ -780,7 +780,7 @@ static struct template template_table[] = {
     /* Store with pop. */
     { "fstp", 0xDDD8, NONE, 1, { 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0 }, { { 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } } },
     { "fstp", 0xD9, 3, 1, { 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0 }, { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0 } } },
-    { "fstp", 0xDB, 7, 1, { 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0 }, { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0 } } },
+    { "fstp", 0xDB, 7, 1, { 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0 }, { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0 } } },
     { "fistp", 0xDF, 3, 1, { 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0 }, { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0 } } },
     { "fistp", 0xDF, 7, 1, { 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0 }, { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0 } } },
     { "fistpll", 0xDF, 7, 1, { 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0 }, { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0 } } },
@@ -1984,7 +1984,7 @@ static void handler_extern (char *start, char **pp) {
             
             *pp = skip_whitespace (*pp);
             
-            if (xstrcasecmp (qualifier, "byte") && xstrcasecmp (qualifier, "word") && xstrcasecmp (qualifier, "dword") && xstrcasecmp (qualifier, "proc")) {
+            if (xstrcasecmp (qualifier, "byte") && xstrcasecmp (qualifier, "word") && xstrcasecmp (qualifier, "dword") && xstrcasecmp (qualifier, "ptr") && xstrcasecmp (qualifier, "proc")) {
             
                 free (qualifier);
                 goto error;
@@ -2034,7 +2034,7 @@ static void handler_model (char *start, char **pp) {
         state->model = 7;
         
         if (cpu_arch_flags.cpu_386) {
-            bits = 32;
+            machine_dependent_set_bits (32, 1);
         }
     
     } else {
@@ -2703,6 +2703,41 @@ static struct reg_entry *parse_register (const char *reg_string, char **end_pp) 
     
     if (!reg) {
         return 0;
+    }
+    
+    if (reg == reg_st0) {
+    
+        if (!cpu_arch_flags.cpu_8087 && !cpu_arch_flags.cpu_287 && !cpu_arch_flags.cpu_387) {
+            return 0;
+        }
+        
+        p = skip_whitespace (p);
+        
+        if (*p == '(') {
+        
+            p = skip_whitespace (++p);
+            
+            if  (*p >= '0' && *p <= '7') {
+            
+                reg = &(reg_st0[*p - '0']);
+                
+                if (*(p = skip_whitespace (++p)) == ')') {
+                
+                    *end_pp = p + 1;
+                    return reg;
+                
+                }
+            
+            }
+            
+            return 0;
+        
+        }
+    
+    }
+    
+    if (!reg) {
+        return 0;
     } else if (check_reg (reg)) {
         return reg;
     }
@@ -3214,10 +3249,15 @@ static int intel_parse_operand (char *start, char *operand_string) {
             case EXPR_TYPE_TBYTE_PTR:
             
                 instruction.types[instruction.operands].tbyte = 1;
-                
+#if     0
+                /**
+                 * Not sure what was the point of this
+                 * but it is wrong as it breaks "fstp tbyte ptr [ebp-20]".
+                 */
                 if (intel_float_suffix_translation (current_templates->name) == 1) {
                     suffix = INTEL_SUFFIX;
                 }
+#endif
                 
                 break;
             
@@ -4510,7 +4550,7 @@ static int match_template (char mnemonic_suffix) {
             
             case x86_error_invalid_instruction_suffix:
             
-                report_at (get_filename (), get_line_number (), REPORT_ERROR, "invalid instruction suffix '%c' for %s", mnemonic_suffix, current_templates->name);
+                report_at (get_filename (), get_line_number (), REPORT_ERROR, "invalid instruction suffix for %s", current_templates->name);
                 return 1;
             
             case x86_error_operand_size_mismatch:
