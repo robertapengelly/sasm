@@ -220,10 +220,10 @@ static char *preprocess_line (char *src, int in_macro) {
 }
 
 
-struct pp_pseudo_op_entry {
+struct pp_cond_pseudo_op_entry {
 
     const char *name;
-    void (*handler) (char *start, char **pp);
+    int (*handler) (char *start, char **pp);
 
 };
 
@@ -231,12 +231,12 @@ static struct vector vec_include_paths = { 0 };
 
 struct cond {
 
-    char *directive;
-    int ignore_line;
+    char *directive, *filename;
     
-    char *filename;
+    int ignore_line;
     unsigned long line_number;
     
+    int need_else;
     int has_else;
 
 };
@@ -244,10 +244,12 @@ struct cond {
 static struct vector vec_ifstack = { 0 };
 static int ignore_line = 0, iflevel = 0;
 
-static void handler_if (char *start, char **pp) {
+static int handler_if (char *start, char **pp) {
 
     struct cond *cond;
     struct expr expr_s;
+    
+    int ret = 1;
     
     char *tokenized_line, *tokenized_start;
     unsigned long pos = *pp - start;
@@ -273,18 +275,24 @@ static void handler_if (char *start, char **pp) {
         cond->line_number = get_line_number ();
         
         vec_push (&vec_ifstack, cond);
-        ignore_line = (expr_s.add_number == 0);
+        ret = (expr_s.add_number == 0);
+        
+        cond->need_else = !ret;
     
     } else {
         iflevel++;
     }
+    
+    return ret;
 
 }
 
-static void handler_ifdef (char *start, char **pp) {
+static int handler_ifdef (char *start, char **pp) {
 
     struct cond *cond;
+    
     char *sname, *caret;
+    int ret = 1;
     
     if (!ignore_line) {
     
@@ -308,7 +316,7 @@ static void handler_ifdef (char *start, char **pp) {
             }
             
             sname = xstrndup (caret, *pp - caret);
-            ignore_line = (find_macro (sname) == NULL);
+            ret = (find_macro (sname) == NULL);
             
             free (sname);
         
@@ -319,17 +327,23 @@ static void handler_ifdef (char *start, char **pp) {
         if (!is_end_of_line[(int) **pp]) {
             report_line_at (get_filename (), get_line_number (), REPORT_WARNING, start, *pp, "extra tokens at end of %%ifdef directive");
         }
+        
+        cond->need_else = !ret;
     
     } else {
         iflevel++;
     }
+    
+    return ret;
 
 }
 
-static void handler_ifndef (char *start, char **pp) {
+static int handler_ifndef (char *start, char **pp) {
 
     struct cond *cond;
+    
     char *sname, *caret;
+    int ret = 1;
     
     if (!ignore_line) {
     
@@ -353,7 +367,7 @@ static void handler_ifndef (char *start, char **pp) {
             }
             
             sname = xstrndup (caret, *pp - caret);
-            ignore_line = (find_macro (sname) != NULL);
+            ret = !(find_macro (sname) == NULL);
             
             free (sname);
         
@@ -364,17 +378,23 @@ static void handler_ifndef (char *start, char **pp) {
         if (!is_end_of_line[(int) **pp]) {
             report_line_at (get_filename (), get_line_number (), REPORT_WARNING, start, *pp, "extra tokens at end of %%ifndef directive");
         }
+        
+        cond->need_else = !ret;
     
     } else {
         iflevel++;
     }
+    
+    return ret;
 
 }
 
-static void handler_elif (char *start, char **pp) {
+static int handler_elif (char *start, char **pp) {
 
     struct cond *cond;
     struct expr expr_s;
+    
+    int ret = 1;
     
     char *tokenized_line, *tokenized_start;
     unsigned long pos = *pp - start;
@@ -389,8 +409,8 @@ static void handler_elif (char *start, char **pp) {
     
         if (vec_ifstack.length == 0) {
         
-            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start + 1), "%%elif without %%if");
-            return;
+            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start + 1), "%%elif without #if");
+            return ret;
         
         } else {
         
@@ -398,29 +418,36 @@ static void handler_elif (char *start, char **pp) {
             
             if (cond->has_else > 0) {
             
-                report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start + 1), "%%elif after %%else");
-                return;
+                report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start + 1), "%%elif after #else");
+                return ret;
             
             }
         
         }
         
-        ignore_line = (ignore_line && (expr_s.add_number == 0));
+        if (ignore_line) {
+            ret = (expr_s.add_number == 0);
+        }
+        
+        cond->need_else = !ret || !ignore_line;
     
     }
+    
+    return ret;
 
 }
 
-static void handler_else (char *start, char **pp) {
+static int handler_else (char *start, char **pp) {
 
     struct cond *cond;
+    int ret = 1;
     
     if (!iflevel) {
     
         if (vec_ifstack.length == 0) {
         
-            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start + 1), "%%else without %%if");
-            return;
+            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start + 1), "%%else without #if");
+            return ret;
         
         } else {
         
@@ -428,8 +455,8 @@ static void handler_else (char *start, char **pp) {
             
             if (cond->has_else > 0) {
             
-                report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start + 1), "%%else after %%else");
-                return;
+                report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start + 1), "%%else after #else");
+                return ret;
             
             }
             
@@ -443,21 +470,24 @@ static void handler_else (char *start, char **pp) {
             report_line_at (get_filename (), get_line_number (), REPORT_WARNING, start, *pp, "extra tokens at end of %%else directive");
         }
         
-        ignore_line = !ignore_line;
+        ret = cond->need_else;
     
     }
+    
+    return ret;
 
 }
 
-static void handler_endif (char *start, char **pp) {
+static int handler_endif (char *start, char **pp) {
 
     struct cond *cond;
+    int ret = 0;
     
     if (!iflevel) {
     
         if ((cond = vec_pop (&vec_ifstack))) {
         
-            ignore_line = cond->ignore_line;
+            ret = cond->ignore_line;
             
             free (cond->filename);
             free (cond->directive);
@@ -465,7 +495,7 @@ static void handler_endif (char *start, char **pp) {
             free (cond);
         
         } else {
-            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start + 1), "%%endif without %%if");
+            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start + 1), "%%endif without #if");
         }
         
         *pp = skip_whitespace (*pp);
@@ -477,10 +507,12 @@ static void handler_endif (char *start, char **pp) {
     } else {
         iflevel--;
     }
+    
+    return ret;
 
 }
 
-static struct pp_pseudo_op_entry cond_pseudo_op_table[] = {
+static struct pp_cond_pseudo_op_entry cond_pseudo_op_table[] = {
 
     {   "if",           &handler_if,            },
     {   "ifdef",        &handler_ifdef          },
@@ -496,9 +528,9 @@ static struct pp_pseudo_op_entry cond_pseudo_op_table[] = {
 static struct hashtab hashtab_cond_pseudo_ops = { 0 };
 static int includes = 0;
 
-static void install_pp_pseudo_op_table (struct pp_pseudo_op_entry *table, struct hashtab *hashatb_table) {
+static void install_cond_pp_pseudo_op_table (struct pp_cond_pseudo_op_entry *table, struct hashtab *hashatb_table) {
 
-    struct pp_pseudo_op_entry *entry;
+    struct pp_cond_pseudo_op_entry *entry;
     struct hashtab_name *key;
     
     for (entry = table; entry->name; entry++) {
@@ -523,10 +555,10 @@ static void install_pp_pseudo_op_table (struct pp_pseudo_op_entry *table, struct
 
 }
 
-static struct pp_pseudo_op_entry *find_cond_directive (char *name) {
+static struct pp_cond_pseudo_op_entry *find_cond_directive (char *name) {
 
     struct hashtab_name *key;
-    struct pp_pseudo_op_entry *entry;
+    struct pp_cond_pseudo_op_entry *entry;
     
     if ((key = hashtab_get_key (&hashtab_cond_pseudo_ops, name))) {
     
@@ -540,6 +572,13 @@ static struct pp_pseudo_op_entry *find_cond_directive (char *name) {
 
 }
 
+
+struct pp_pseudo_op_entry {
+
+    const char *name;
+    void (*handler) (char *start, char **pp);
+
+};
 
 static struct hashtab hashtab_pseudo_ops = { 0 };
 
@@ -681,6 +720,33 @@ static struct pp_pseudo_op_entry pseudo_op_table[] = {
 
 };
 
+static void install_pp_pseudo_op_table (struct pp_pseudo_op_entry *table, struct hashtab *hashatb_table) {
+
+    struct pp_pseudo_op_entry *entry;
+    struct hashtab_name *key;
+    
+    for (entry = table; entry->name; entry++) {
+    
+        if (hashtab_get_key (hashatb_table, entry->name)) {
+        
+            report_at (program_name, 0, REPORT_ERROR, "duplicate entry '%s'", entry->name);
+            continue;
+        
+        }
+        
+        if (!(key = hashtab_alloc_name (entry->name))) {
+        
+            report_at (program_name, 0, REPORT_ERROR, "failed to allocate memory for '%s'", entry->name);
+            continue;
+        
+        }
+        
+        hashtab_put (hashatb_table, key, entry);
+    
+    }
+
+}
+
 struct pp_pseudo_op_entry *find_directive (char *name) {
 
     struct hashtab_name *key;
@@ -761,7 +827,7 @@ int preprocess_init (void) {
     
     }
     
-    install_pp_pseudo_op_table (cond_pseudo_op_table, &hashtab_cond_pseudo_ops);
+    install_cond_pp_pseudo_op_table (cond_pseudo_op_table, &hashtab_cond_pseudo_ops);
     install_pp_pseudo_op_table (pseudo_op_table, &hashtab_pseudo_ops);
     
     return get_error_count () > 0;
@@ -1199,7 +1265,6 @@ void process_file (const char *ifile) {
     unsigned long new_line_number = 1;
     unsigned long newlines;
     
-    struct pp_pseudo_op_entry *poe;
     void *load_line_internal_data = NULL;
     
     struct cond *cond;
@@ -1255,6 +1320,8 @@ void process_file (const char *ifile) {
             
             if (is_name_beginner ((int) *line)) {
             
+                struct pp_cond_pseudo_op_entry *poe;
+                
                 while (is_name_part ((int) *line)) {
                     line++;
                 }
@@ -1264,7 +1331,7 @@ void process_file (const char *ifile) {
                 
                 if ((poe = find_cond_directive (arg))) {
                 
-                    poe->handler (start, &line);
+                    ignore_line = poe->handler (start, &line);
                     
                     free (arg);
                     continue;
@@ -1273,6 +1340,8 @@ void process_file (const char *ifile) {
                 
                 if (!ignore_line) {
                 
+                    struct pp_pseudo_op_entry *poe;
+                    
                     if ((poe = find_directive (arg))) {
                     
                         poe->handler (start, &line);
@@ -1301,13 +1370,15 @@ void process_file (const char *ifile) {
         
         if (is_name_beginner ((int) *line)) {
         
+            struct pp_cond_pseudo_op_entry *poe;
+            
             if ((arg = symname (&line))) {
             
                 line = skip_whitespace (line);
                 
                 if ((poe = find_cond_directive (arg))) {
                 
-                    poe->handler (start, &line);
+                    ignore_line = poe->handler (start, &line);
                     
                     free (arg);
                     continue;
