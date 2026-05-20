@@ -1946,7 +1946,7 @@ static void handler_extern (char *start, char **pp) {
         
         if ((symbol = symbol_find (name))) {
         
-            if (symbol->scope == SYMBOL_SCOPE_LOCAL || symbol->scope == SYMBOL_SCOPE_GLOBAL) {
+            if (symbol->section != undefined_section && (symbol->scope == SYMBOL_SCOPE_LOCAL || symbol->scope == SYMBOL_SCOPE_GLOBAL)) {
                 report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, caret, "symbol '%s' is already defined", name);
             } else {
             
