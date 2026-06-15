@@ -1984,7 +1984,7 @@ static void handler_extern (char *start, char **pp) {
             
             *pp = skip_whitespace (*pp);
             
-            if (xstrcasecmp (qualifier, "byte") && xstrcasecmp (qualifier, "word") && xstrcasecmp (qualifier, "dword") && xstrcasecmp (qualifier, "ptr") && xstrcasecmp (qualifier, "proc")) {
+            if (xstrcasecmp (qualifier, "byte") && xstrcasecmp (qualifier, "word") && xstrcasecmp (qualifier, "dword") && xstrcasecmp (qualifier, "qword") && xstrcasecmp (qualifier, "ptr") && xstrcasecmp (qualifier, "proc")) {
             
                 free (qualifier);
                 goto error;
