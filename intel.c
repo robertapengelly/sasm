@@ -2033,7 +2033,7 @@ static void handler_model (char *start, char **pp) {
         state->data_size = 0;
         state->model = 7;
         
-        if (cpu_arch_flags.cpu_386) {
+        if (!cpu_arch_flags.cpu_long_mode && cpu_arch_flags.cpu_386) {
         
             machine_dependent_set_march ("i386+387");
             machine_dependent_set_bits (32, 1);
