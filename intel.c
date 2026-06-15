@@ -5189,12 +5189,32 @@ static const struct reg_entry *build_modrm (void) {
                     
                     if (bits == 64) {
                     
-                        /* In 64 bit mode default addressing is %rip relative addressing
-                         * instead of absolute addresing. */
-                        instruction.modrm.regmem = MODRM_REGMEM_TWO_BYTE_ADDRESSING;
-                        instruction.sib.base = SIB_BASE_NO_BASE_REGISTER;
-                        instruction.sib.index = SIB_INDEX_NO_INDEX_REGISTER;
-                        instruction.types[operand].disp32 = 1;
+                        /*
+                         * In 64-bit mode, a plain symbolic memory operand such as
+                         *     [foo]
+                         * should be encoded as RIP-relative.  The old code used the
+                         * SIB no-base form here, which is an absolute disp32 memory
+                         * reference in long mode.  That made COFF emit AMD64_ADDR32
+                         * relocations for normal data references, and the PE linker
+                         * then had to create HIGHLOW base relocs in a PE32+ image.
+                         *
+                         * Keep absolute disp32 only for numeric constants like [1234].
+                         * Non-constant expressions are symbols and should become REL32.
+                         */
+                        if (instruction.disp_operands != 0 && instruction.disps[operand] && instruction.disps[operand]->type != EXPR_TYPE_CONSTANT) {
+                        
+                            instruction.modrm.regmem = SIB_BASE_NO_BASE_REGISTER;
+                            instruction.types[operand].disp32 = 1;
+                            instruction.special_types[operand] |= OPERAND_PCREL;
+                        
+                        } else {
+                        
+                            instruction.modrm.regmem = MODRM_REGMEM_TWO_BYTE_ADDRESSING;
+                            instruction.sib.base = SIB_BASE_NO_BASE_REGISTER;
+                            instruction.sib.index = SIB_INDEX_NO_INDEX_REGISTER;
+                            instruction.types[operand].disp32 = 1;
+                        
+                        }
                     
                     } else if ((bits == 16) ^ (instruction.prefixes[ADDR_PREFIX] != 0)) {
                     
