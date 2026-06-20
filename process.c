@@ -1097,7 +1097,7 @@ static void process_line (char *line, char *line_end) {
             
             }
             
-            if (machine_dependent_find_templates (arg, 1)) {
+            if (*line != ':' && current_section == text_section && machine_dependent_find_templates (arg, 1)) {
             
                 saved_ch = *(line = find_end_of_line (line));
                 *line = '\0';
