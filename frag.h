@@ -4,7 +4,7 @@
 #ifndef     _FRAG_H
 #define     _FRAG_H
 
-#include    "stdint.h"
+#include    <stdint.h>
 
 #define     RELAX_TYPE_NONE_NEEDED                          0
 #define     RELAX_TYPE_ALIGN                                1

@@ -429,7 +429,7 @@ static void adjust_reloc_symbols_of_section (struct section *section) {
 
 }
 
-#include    "inttypes.h"
+#include    <inttypes.h>
 int64_t machine_dependent_pcrel_from (struct fixup *fixup);
 
 int machine_dependent_force_relocation_local (struct fixup *fixup);

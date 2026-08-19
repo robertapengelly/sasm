@@ -4067,10 +4067,6 @@ static int fits_in_unsigned_word (uint64_t number) {
     return ((number & 0xffff) == number);
 }
 
-#if     defined (NO_LONG_LONG)
-# define    fits_in_signed_long(x)                          1
-# define    fits_in_unsigned_long(x)                        1     
-#else
 static int fits_in_signed_long (int64_t number) {
     return ((number >= -2147483647-1) && (number <= 2147483647));
 }
@@ -4078,7 +4074,6 @@ static int fits_in_signed_long (int64_t number) {
 static int fits_in_unsigned_long (uint64_t number) {
     return ((number & 0xffffffff) == number);
 }
-#endif
 
 static struct operand_type smallest_imm_type (int64_t number) {
     

@@ -4,7 +4,7 @@
 #ifndef     _EXPR_H
 #define     _EXPR_H
 
-#include    "stdint.h"
+#include    <stdint.h>
 
 enum expr_type {
 

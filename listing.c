@@ -132,7 +132,7 @@ void add_listing_message (char *message, const char *filename, unsigned long lin
 
 }
 
-#include    "inttypes.h"
+#include    <inttypes.h>
 
 void generate_listing (void) {
 

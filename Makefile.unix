@@ -5,7 +5,7 @@ SRCDIR              ?=  $(CURDIR)
 VPATH               :=  $(SRCDIR)
 
 CC                  :=  gcc
-CFLAGS              :=  -D_FILE_OFFSET_BITS=64 -O2 -Wall -Werror -Wextra -ansi -pedantic -std=c90
+CFLAGS              :=  -D_FILE_OFFSET_BITS=64 -O2 -Wall -Werror -Wextra
 
 CSRC                :=  as.c coff.c cstr.c elks.c expr.c fixup.c frag.c hashtab.c intel.c kwd.c lex.c lib.c list.c listing.c ll.c macro.c process.c report.c section.c symbol.c vector.c
 
