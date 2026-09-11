@@ -26,6 +26,390 @@
 
 static struct hashtab hashtab_seen_macros = { 0 };
 
+struct masm_macro {
+
+    char *name;
+    
+    struct vector args;
+    struct cstring body;
+
+};
+
+static struct vector vec_masm_macros = { 0 };
+static struct vector vec_active_masm_macros = { 0 };
+
+static int masm_macro_is_active (struct masm_macro *m) {
+
+    int i;
+    
+    for (i = 0; i < vec_active_masm_macros.length; i++) {
+    
+        if (vec_active_masm_macros.data[i] == m) {
+            return 1;
+        }
+    
+    }
+    
+    return 0;
+
+}
+
+static struct masm_macro *find_masm_macro (const char *name) {
+
+    int i;
+    
+    for (i = 0; i < vec_masm_macros.length; i++) {
+    
+        struct masm_macro *m = vec_masm_macros.data[i];
+        
+        if (xstrcasecmp (m->name, name) == 0) {
+            return m;
+        }
+    
+    }
+    
+    return 0;
+
+}
+
+static void free_masm_macro (struct masm_macro *m) {
+
+    char *arg;
+    
+    if (!m) {
+        return;
+    }
+    
+    while ((arg = vec_pop (&m->args))) {
+        free (arg);
+    }
+    
+    free (m->args.data);
+    free (m->name);
+    
+    cstr_free (&m->body);
+    free (m);
+
+}
+
+static int is_masm_endm (char *line, char *line_end) {
+
+    char *caret, *name;
+    int ret = 0;
+    
+    caret = skip_whitespace (line);
+    
+    if (caret >= line_end || !(name = symname (&caret))) {
+        return 0;
+    }
+    
+    caret = skip_whitespace (caret);
+    
+    if (xstrcasecmp (name, "endm") == 0 && (caret >= line_end || is_end_of_line[(int) *caret])) {
+        ret = 1;
+    }
+    
+    free (name);
+    return ret;
+
+}
+
+static struct masm_macro *parse_masm_macro_definition (char *start, char *line_end) {
+
+    char *line, *name, *directive, *arg;
+    struct masm_macro *m;
+    
+    line = skip_whitespace (start);
+    
+    if (line >= line_end || !(name = symname (&line))) {
+        return 0;
+    }
+    
+    line = skip_whitespace (line);
+    
+    if (line >= line_end || !(directive = symname (&line))) {
+    
+        free (name);
+        return 0;
+    
+    }
+    
+    if (xstrcasecmp (directive, "macro") != 0) {
+    
+        free (directive);
+        free (name);
+        
+        return 0;
+    
+    }
+    
+    free (directive);
+    
+    m = xmalloc (sizeof (*m));
+    memset (m, 0, sizeof (*m));
+    
+    m->name = name;
+    cstr_new (&m->body);
+    
+    line = skip_whitespace (line);
+    
+    while (line < line_end && !is_end_of_line[(int) *line]) {
+    
+        if (!(arg = symname (&line))) {
+        
+            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, line, "expected macro parameter name");
+            
+            free_masm_macro (m);
+            return (struct masm_macro *) -1;
+        
+        }
+        
+        vec_push (&m->args, arg);
+        line = skip_whitespace (line);
+        
+        if (line >= line_end || is_end_of_line[(int) *line]) {
+            break;
+        }
+        
+        if (*line != ',') {
+        
+            report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, line, "expected ',' after macro parameter");
+            
+            free_masm_macro (m);
+            return (struct masm_macro *) -1;
+        
+        }
+        
+        line = skip_whitespace (line + 1);
+    
+    }
+    
+    return m;
+
+}
+
+static int masm_macro_arg_index (struct masm_macro *m, const char *name) {
+
+    int i;
+    
+    for (i = 0; i < m->args.length; i++) {
+    
+        if (xstrcasecmp (m->args.data[i], name) == 0) {
+            return i;
+        }
+    
+    }
+    
+    return -1;
+
+}
+
+static void free_string_vector (struct vector *vec) {
+
+    char *arg;
+    
+    while ((arg = vec_pop (vec))) {
+        free (arg);
+    }
+    
+    free (vec->data);
+    memset (vec, 0, sizeof (*vec));
+
+}
+
+static int parse_masm_macro_arguments (char *start, char *line, struct masm_macro *m, struct vector *args) {
+
+    char *arg_start, *caret, ch;
+    
+    memset (args, 0, sizeof (*args));
+    line = skip_whitespace (line);
+    
+    while (!is_end_of_line[(int) *line]) {
+        
+        arg_start = line;
+        caret = line;
+        ch = 0;
+        
+        while (!is_end_of_line[(int) *caret]) {
+        
+            if (ch) {
+            
+                if (*caret == '\\' && caret[1]) {
+                
+                    caret += 2;
+                    continue;
+                
+                }
+                
+                if (*caret == ch) { ch = 0; }
+                caret++;
+                
+                continue;
+            
+            }
+            
+            if (*caret == '\"' || *caret == '\'') {
+            
+                ch = *caret++;
+                continue;
+            
+            }
+            
+            if (*caret == ',') { break; }
+            caret++;
+        
+        }
+        
+        while (caret > arg_start && isspace ((int) caret[-1])) {
+            caret--;
+        }
+        
+        while (arg_start < caret && isspace ((int) *arg_start)) {
+            arg_start++;
+        }
+        
+        vec_push (args, xstrndup (arg_start, caret - arg_start));
+        line = caret;
+        
+        if (*line == ',') {
+            line = skip_whitespace (line + 1);
+        }
+    
+    }
+    
+    if (args->length != m->args.length) {
+    
+        report_line_at (get_filename (), get_line_number (), REPORT_ERROR, start, skip_whitespace (start),
+            "macro \"%s\" requires %d argument%s, but %d given",
+                m->name, m->args.length, m->args.length == 1 ? "" : "s", args->length);
+        return 1;
+    
+    }
+    
+    return 0;
+
+}
+
+static char *expand_masm_macro_body (struct masm_macro *m, struct vector *args) {
+
+    struct cstring out;
+    
+    char *line, *name;
+    int idx, last_was_param = 0;
+    
+    cstr_new (&out);
+    line = m->body.data;
+    
+    while (line && *line) {
+    
+        if (*line == '"' || *line == '\'') {
+        
+            char quote = *line;
+            cstr_ccat (&out, *line++);
+            
+            while (*line) {
+            
+                cstr_ccat (&out, *line);
+                
+                if (*line == '\\' && line[1]) {
+                
+                    line++;
+                    
+                    cstr_ccat (&out, *line++);
+                    continue;
+                
+                }
+                
+                if (*line++ == quote) { break; }
+            
+            }
+            
+            last_was_param = 0;
+            continue;
+        
+        }
+        
+        if (is_name_beginner ((int) *line)) {
+        
+            name = symname (&line);
+            idx = masm_macro_arg_index (m, name);
+            
+            if (idx >= 0) {
+            
+                cstr_cat (&out, args->data[idx], strlen (args->data[idx]));
+                last_was_param = 1;
+            
+            } else {
+            
+                cstr_cat (&out, name, strlen (name));
+                last_was_param = 0;
+            
+            }
+            
+            free (name);
+            continue;
+        
+        }
+        
+        if (*line == '&') {
+        
+            int concatenate = last_was_param;
+            
+            if (!concatenate && is_name_beginner ((int) line[1])) {
+            
+                char *temp = line + 1;
+                
+                name = symname (&temp);
+                concatenate = (masm_macro_arg_index (m, name) >= 0);
+                
+                free (name);
+            
+            }
+            
+            if (concatenate) {
+            
+                line++;
+                continue;
+            
+            }
+        
+        }
+        
+        cstr_ccat (&out, *line++);
+        last_was_param = 0;
+    
+    }
+    
+    cstr_ccat (&out, '\0');
+    return out.data;
+
+}
+
+static void install_masm_macro (struct masm_macro *m) {
+
+    int i;
+    
+    for (i = 0; i < vec_masm_macros.length; i++) {
+    
+        struct masm_macro *old = vec_masm_macros.data[i];
+        
+        if (xstrcasecmp (old->name, m->name) == 0) {
+        
+            report_at (get_filename (), get_line_number (), REPORT_WARNING, "macro \"%s\" redefined", m->name);
+            
+            free_masm_macro (old);
+            vec_masm_macros.data[i] = m;
+            
+            return;
+        
+        }
+    
+    }
+    
+    vec_push (&vec_masm_macros, m);
+
+}
+
 static char *preprocess_line (char *src, int in_macro) {
 
     struct cstring cstr;
@@ -1254,6 +1638,79 @@ static void process_line (char *line, char *line_end) {
 
 }
 
+static void process_source_line (char *start) {
+
+    char *line, *name;
+    
+    struct masm_macro *m;
+    struct vector args;
+    
+    line = skip_whitespace (start);
+    
+    if (is_name_beginner ((int) *line)) {
+    
+        char *after_name = line;
+        
+        if ((name = symname (&after_name))) {
+        
+            if ((m = find_masm_macro (name)) && !masm_macro_is_active (m)) {
+            
+                char *expanded, *p, *next;
+                after_name = skip_whitespace (after_name);
+                
+                if (!parse_masm_macro_arguments (start, after_name, m, &args)) {
+                
+                    expanded = expand_masm_macro_body (m, &args);
+                    vec_push (&vec_active_masm_macros, m);
+                    
+                    p = expanded;
+                    
+                    while (*p) {
+                    
+                        next = strchr (p, '\n');
+                        
+                        if (next) {
+                            *next = '\0';
+                        }
+                        
+                        if (*skip_whitespace (p)) {
+                            process_source_line (p);
+                        }
+                        
+                        if (!next) { break; }
+                        p = next + 1;
+                    
+                    }
+                    
+                    vec_pop (&vec_active_masm_macros);
+                    free (expanded);
+                
+                }
+                
+                free_string_vector (&args);
+                free (name);
+                
+                return;
+            
+            }
+            
+            free (name);
+        
+        }
+    
+    }
+    
+    {
+    
+        char *tokenized_line = preprocess_line (start, 0);
+        
+        process_line (tokenized_line, tokenized_line + strlen (tokenized_line));
+        free (tokenized_line);
+    
+    }
+
+}
+
 void process_file (const char *ifile) {
 
     char *start, *arg, *caret;
@@ -1269,6 +1726,8 @@ void process_file (const char *ifile) {
     
     struct cond *cond;
     int cond_idx, proc_idx, seg_idx;
+    
+    struct masm_macro *masm_macro = 0;
     
     if (!ifile || strcmp (ifile, "-") == 0) {
     
@@ -1306,6 +1765,43 @@ void process_file (const char *ifile) {
         
         if (state->verbose) {
             printf ("%s:%lu: %.*s", get_filename (), get_line_number (), (int) real_line_len, real_line);
+        }
+        
+        if (masm_macro) {
+        
+            if (is_masm_endm (line, line_end)) {
+            
+                cstr_ccat (&masm_macro->body, '\0');
+                
+                install_masm_macro (masm_macro);
+                masm_macro = 0;
+            
+            } else {
+            
+                cstr_cat (&masm_macro->body, line, line_end - line);
+                cstr_ccat (&masm_macro->body, '\n');
+            
+            }
+            
+            continue;
+        
+        }
+        
+        if (!ignore_line) {
+        
+            struct masm_macro *new_macro = parse_masm_macro_definition (line, line_end);
+            
+            if (new_macro == (struct masm_macro *) -1) {
+                continue;
+            }
+            
+            if (new_macro) {
+            
+                masm_macro = new_macro;
+                continue;
+            
+            }
+        
         }
         
         caret = (line = skip_whitespace (line));
@@ -1396,13 +1892,19 @@ void process_file (const char *ifile) {
         if (!ignore_line) {
         
             if (line < line_end) {
-            
-                char *tokenized_line = preprocess_line (line, 0);
-                process_line (tokenized_line, tokenized_line + strlen (tokenized_line));
-            
+                process_source_line (line);
             }
         
         }
+    
+    }
+    
+    if (masm_macro) {
+    
+        report_at (get_filename (), get_line_number (), REPORT_ERROR, "unterminated macro \"%s\"", masm_macro->name);
+        
+        free_masm_macro (masm_macro);
+        masm_macro = 0;
     
     }
     
