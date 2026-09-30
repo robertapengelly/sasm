@@ -46,7 +46,9 @@ extern void machine_dependent_init (void);
 int main (int argc, char **argv) {
 
     struct symbol *symbol;
-    char *p, *root;
+    
+    const char *p;
+    char *root;
     
     if (argc && *argv) {
     
